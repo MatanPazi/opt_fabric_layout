@@ -1,6 +1,4 @@
-# # Sources:
-# # PDF layer extaction:
-# # https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877
+# See relevant sources in function description.
 # #!/usr/bin/env python3
 import sys
 import pikepdf
@@ -14,6 +12,8 @@ import math
 
 
 # Extract relevant PDF layers
+# Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
+# Made relevant changes.
 def pdfLayers(pdf_name, pdf_out, desired_layers):
     # check if we even have some OCGs
     pdf = pikepdf.open(pdf_name)
@@ -99,7 +99,8 @@ def pdf2image(desired_layers, pdf_out, img_out):
 
 
 
-
+# Source: https://richardpricejones.medium.com/drawing-a-rectangle-with-a-angle-using-opencv-c9284eae3380
+# Made relevant changes.
 def draw_angled_rec(x0, y0, width, height, angle, img):
 
     _angle = angle * math.pi / 180.0
