@@ -121,7 +121,6 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
 
 
 
-
 # Find grainline contours
 def find_direction_contours(image):
     img = cv2.imread(image)
@@ -133,6 +132,7 @@ def find_direction_contours(image):
 
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
+    good_contours = []
     shape = (len(contours), 1)  # len(contours) rows and 1 columns
     x = np.zeros(shape).astype(int)
     y = np.zeros(shape).astype(int)
@@ -151,6 +151,7 @@ def find_direction_contours(image):
         if first == 1:        # First contour encompasses entire image
             first = 0
             continue
+        good_contours.append(cnt)
         rect = cv2.minAreaRect(cnt)
         x[j] = rect[0][0]
         y[j] = rect[0][1]
@@ -163,6 +164,7 @@ def find_direction_contours(image):
             w = np.delete(w, j, 0)
             h = np.delete(h, j, 0) 
             theta = np.delete(theta, j, 0)
+            good_contours.pop(j)
             continue
         if w[j]/h[j] > slender_rat or h[j]/w[j] > slender_rat:
             if w[j]/h[j] > slender_rat:
@@ -172,10 +174,19 @@ def find_direction_contours(image):
                     w = np.delete(w, j, 0)
                     h = np.delete(h, j, 0)
                     theta = np.delete(theta, j, 0)
+                    good_contours.pop(j)
                 else:
-                    img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
-                    cv2.imwrite('image_copy.png',image_copy) 
-                    j += 1
+                    if "direction contour is inside one of the pattern contours":
+                        img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
+                        cv2.imwrite('image_copy.png',image_copy) 
+                        j += 1
+                    else:
+                        x = np.delete(x, j, 0)
+                        y = np.delete(y, j, 0)
+                        w = np.delete(w, j, 0)
+                        h = np.delete(h, j, 0)
+                        theta = np.delete(theta, j, 0)
+                        good_contours.pop(j)
             elif h[j]/w[j] > slender_rat:
                 if (h[j] < min_len or w[j] < min_width or w[j] > max_width):
                     x = np.delete(x, j, 0)
@@ -183,6 +194,7 @@ def find_direction_contours(image):
                     w = np.delete(w, j, 0)
                     h = np.delete(h, j, 0)    
                     theta = np.delete(theta, j, 0)
+                    good_contours.pop(j)
                 else:
                     img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                     cv2.imwrite('image_copy.png',image_copy) 
@@ -193,8 +205,9 @@ def find_direction_contours(image):
             w = np.delete(w, j, 0)
             h = np.delete(h, j, 0)
             theta = np.delete(theta, j, 0)
+            good_contours.pop(j)
 
-    return x,y,w,h,theta
+    return x,y,w,h,theta #(return good_contours)
 
 # Find the pattern contours
 def find_pattern_contours(image):
