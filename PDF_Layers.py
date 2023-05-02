@@ -14,8 +14,8 @@ desired_layers = [Direction_Layer,Pattern_Layer]
 
 # pdfLayers(pdf_name, pdf_out, desired_layers)
 # pdf2image(desired_layers, pdf_out, img_out)
-# x,y,w,h,theta = find_direction_contours(img_out.format(num=Direction_Layer))
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
+# x,y,w,h,theta = find_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 print(pattern_contours)
 # for image in glob.glob("*.png"):
 #     transparent(image)
