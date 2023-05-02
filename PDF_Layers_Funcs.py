@@ -119,7 +119,19 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
     cv2.line(img, pt3, pt0, (0, 255, 0), 5)
 
 
-
+def rect_in_rect(rect_dir, rect_ptrn):
+    for rect in rect_ptrn:        
+        x_dir = rect_dir[0][0]
+        y_dir = rect_dir[0][1]
+        w_dir = rect_dir[1][0]
+        h_dir = rect_dir[1][1]
+        theta_dir = rect_dir[2]
+        
+        x_ptrn = rect[0][0]
+        y_ptrn = rect[0][1]
+        w_ptrn = rect[1][0]
+        h_ptrn = rect[1][1]
+        theta_ptrn = rect[2]
 
 # Find grainline contours
 def find_direction_contours(image, ptrn_cntrs):
