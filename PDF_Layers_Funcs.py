@@ -122,14 +122,20 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
 
 
 # Find grainline contours
-def find_direction_contours(image):
+def find_direction_contours(image, ptrn_cntrs):
     img = cv2.imread(image)
     image_copy = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # cv2.imwrite('img.png',img)                
     ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
-    # cv2.imwrite('thresh.png',thresh)                
-
+    # cv2.imwrite('thresh.png',thresh)               
+    # Get minAreaRect of pattern contours.
+    rect_ptrn = []
+    j = 0
+    for ptrn_cnt in ptrn_cntrs:
+        rect_ptrn[j] = cv2.minAreaRect(ptrn_cnt)
+        j += 1
+    
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
     good_contours = []
@@ -139,6 +145,7 @@ def find_direction_contours(image):
     w = np.zeros(shape).astype(int)
     h = np.zeros(shape).astype(int)
     theta = np.zeros(shape).astype(int)
+    
     # image_copy = img.copy()
     # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
     slender_rat = 3
@@ -176,7 +183,7 @@ def find_direction_contours(image):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    if "direction contour is inside one of the pattern contours":
+                    if rect_in_rect(rect,rect_ptrn):
                         img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
                         j += 1
@@ -196,9 +203,17 @@ def find_direction_contours(image):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
-                    cv2.imwrite('image_copy.png',image_copy) 
-                    j += 1
+                    if rect_in_rect(rect,rect_ptrn):
+                        img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
+                        cv2.imwrite('image_copy.png',image_copy) 
+                        j += 1
+                    else:
+                        x = np.delete(x, j, 0)
+                        y = np.delete(y, j, 0)
+                        w = np.delete(w, j, 0)
+                        h = np.delete(h, j, 0)
+                        theta = np.delete(theta, j, 0)
+                        good_contours.pop(j)
         else:
             x = np.delete(x, j, 0)
             y = np.delete(y, j, 0)
