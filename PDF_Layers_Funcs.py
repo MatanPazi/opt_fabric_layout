@@ -119,20 +119,6 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
     cv2.line(img, pt3, pt0, (0, 255, 0), 5)
 
 
-def rect_in_rect(rect_dir, rect_ptrn):
-    for rect in rect_ptrn:        
-        x_dir = rect_dir[0][0]
-        y_dir = rect_dir[0][1]
-        w_dir = rect_dir[1][0]
-        h_dir = rect_dir[1][1]
-        theta_dir = rect_dir[2]
-        
-        x_ptrn = rect[0][0]
-        y_ptrn = rect[0][1]
-        w_ptrn = rect[1][0]
-        h_ptrn = rect[1][1]
-        theta_ptrn = rect[2]
-
 # Find grainline contours
 def find_direction_contours(image, ptrn_cntrs):
     img = cv2.imread(image)
@@ -195,7 +181,7 @@ def find_direction_contours(image, ptrn_cntrs):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    if rect_in_rect(rect,rect_ptrn):
+                    if cv2.rotatedRectangleIntersection(rect, rect_ptrn) == INTERSECT_FULL:
                         img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
                         j += 1
@@ -215,7 +201,7 @@ def find_direction_contours(image, ptrn_cntrs):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    if rect_in_rect(rect,rect_ptrn):
+                    if cv2.rotatedRectangleIntersection(rect, rect_ptrn) == INTERSECT_FULL:
                         img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
                         j += 1
