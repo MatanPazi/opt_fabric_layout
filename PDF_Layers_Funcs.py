@@ -129,10 +129,10 @@ def find_direction_contours(image, ptrn_cntrs):
     # cv2.imwrite('thresh.png',thresh)               
     # Get minAreaRect of pattern contours.
     rect_ptrn = []
-    j = 0
+    ptrn_cnt_counter = 0
     for ptrn_cnt in ptrn_cntrs:
-        rect_ptrn[j] = cv2.minAreaRect(ptrn_cnt)
-        j += 1
+        rect_ptrn[ptrn_cnt_counter] = cv2.minAreaRect(ptrn_cnt)
+        ptrn_cnt_counter += 1
     
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
@@ -156,6 +156,8 @@ def find_direction_contours(image, ptrn_cntrs):
         if first == 1:        # First contour encompasses entire image
             first = 0
             continue
+        i = 0
+        dir_ptrn_flag = 0
         good_contours.append(cnt)
         rect = cv2.minAreaRect(cnt)
         x[j] = rect[0][0]
@@ -181,7 +183,10 @@ def find_direction_contours(image, ptrn_cntrs):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    if cv2.rotatedRectangleIntersection(rect, rect_ptrn) == INTERSECT_FULL:
+                    for i in range(ptrn_cnt_counter):
+                        if cv2.rotatedRectangleIntersection(rect, rect_ptrn[i]) == INTERSECT_FULL:
+                            dir_ptrn_flag = 1
+                    if dir_ptrn_flag == 1:
                         img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
                         j += 1
@@ -201,7 +206,10 @@ def find_direction_contours(image, ptrn_cntrs):
                     theta = np.delete(theta, j, 0)
                     good_contours.pop(j)
                 else:
-                    if cv2.rotatedRectangleIntersection(rect, rect_ptrn) == INTERSECT_FULL:
+                    for i in range(ptrn_cnt_counter):
+                        if cv2.rotatedRectangleIntersection(rect, rect_ptrn[i]) == INTERSECT_FULL:
+                            dir_ptrn_flag = 1
+                    if dir_ptrn_flag == 1:
                         img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
                         j += 1
