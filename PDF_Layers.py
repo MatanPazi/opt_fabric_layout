@@ -25,6 +25,8 @@ potential_dir_contours, potnetial_contour_pattern, pattern_rect = find_potential
     # Increase bounding box width times 3? 4? to bound the relevant text as well.
     # Tesseract path is required, use this:
         # pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    # Use the first answer by Rich and Oliver Wilken to crop the relevant image in which the text resides:
+        # https://stackoverflow.com/questions/37177811/crop-rectangle-returned-by-minarearect-opencv-python
 # TODO: Change image scale to A0.
 
 
