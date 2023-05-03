@@ -23,6 +23,8 @@ potential_dir_contours, potnetial_contour_pattern, pattern_rect = find_potential
 # Use this article to detect what text is written around the arrows:
     # https://medium.com/pythoneers/text-detection-and-extraction-from-image-with-python-5c0c75a8ff14
     # Increase bounding box width times 3? 4? to bound the relevant text as well.
+    # Tesseract path is required, use this:
+        # pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
 # TODO: Change image scale to A0.
 
 
