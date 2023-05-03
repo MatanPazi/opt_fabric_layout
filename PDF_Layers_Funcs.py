@@ -9,7 +9,8 @@ import os
 import cv2
 import numpy as np
 import math
-
+from pytesseract import pytesseract
+import imutils
 
 # Extract relevant PDF layers
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
@@ -100,7 +101,6 @@ def pdf2image(desired_layers, pdf_out, img_out):
 
 
 # Source: https://richardpricejones.medium.com/drawing-a-rectangle-with-a-angle-using-opencv-c9284eae3380
-# Made relevant changes.
 def draw_angled_rec(x0, y0, width, height, angle, img):
 
     _angle = angle * math.pi / 180.0
@@ -232,7 +232,14 @@ def find_potential_direction_contours(image, ptrn_cntrs):
             theta = np.delete(theta, j, 0)
             potential_contours.pop(j)
 
-    return potential_contours, potential_contour_pattern, rect_ptrn
+    # Ignoring patterns that have no arrow in them. 
+    for i in range(ptrn_cnt_counter):
+        if i in potential_contour_pattern:
+            continue
+        else:
+            ptrn_cntrs.pop(i)
+
+    return potential_contours, potential_contour_pattern, ptrn_cntrs
 
 # Find the pattern contours
 def find_pattern_contours(image):
@@ -301,6 +308,67 @@ def find_pattern_contours(image):
     # cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
 
+# Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
+# Made slight changes
+def crop_image(cnt, image, type):
+    rect = cv2.minAreaRect(cnt)
+    shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
+    center, size, theta = rect
+    width, height = tuple(map(int, size))
+    center = tuple(map(int, center))    
+    if width < height:
+        theta -= 90
+        width, height = height, width
+
+    matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
+    image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
+
+    if type == 'pattern':
+        new_height = height
+    else:
+        new_height = 4 * height         # To make sure the text is encompassed
+
+    x = int(center[0] - width // 2)
+    y = int(center[1] - new_height // 2)
+
+    image = image[y : y + new_height, x : x + width]
+
+    return image
+
+
+
+def find_text_pattern(image, pattern_contours):
+    pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    img0 = cv2.imread(image)
+    angle = 90
+    for ptrn in pattern_contours:
+        for i in range (4):
+            copies_img = crop_image(ptrn, img0, 'pattern')    
+            img = imutils.rotate(copies_img, angle= (i * 90))
+            cv2.imwrite('img_test.png',img)
+            text = pytesseract.image_to_string(img)
+            if 'cut two' in text or 'cut 2' in text:
+                copies = 2
+                break
+            else:
+                copies = 1
+            #print the text line by line
+            print(text[:-1])
+
+
+    return copies
+
+def find_text_direction(img):
+    pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    text = pytesseract.image_to_string(img)
+    if 'grainline' in text or 'fold' in text:
+        direction = 1
+    else:
+        direction = 0
+
+    #print the text line by line
+    print(text[:-1])
+    return direction
 
 # Turn images transparent
 def transparent(myimage):

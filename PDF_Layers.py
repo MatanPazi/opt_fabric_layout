@@ -15,7 +15,18 @@ desired_layers = [Direction_Layer,Pattern_Layer]
 # pdfLayers(pdf_name, pdf_out, desired_layers)
 # pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
-potential_dir_contours, potnetial_contour_pattern, pattern_rect = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
+potential_dir_contours, potnetial_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
+
+copies = find_text_pattern(img_out.format(num=Direction_Layer), pattern_contours)
+dir = find_text_direction(img_out.format(num=Direction_Layer), potential_dir_contours)
+
+# img = cv2.imread(img_out.format(num=Pattern_Layer))
+# copies_img = crop_image(pattern_contours[0], img, 'pattern')
+
+# img = cv2.imread(img_out.format(num=Direction_Layer))
+# dir_img = crop_image(pattern_contours[0], img, 'direction')
+
+
 # Need to understand with each potential_dir_contours, what it is:
     # Grainline.
     # Cut on fold line.
