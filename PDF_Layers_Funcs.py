@@ -341,6 +341,7 @@ def find_text_pattern(image, pattern_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
     angle = 90
+    copies = []
     for ptrn in pattern_contours:
         for i in range (4):
             copies_img = crop_image(ptrn, img0, 'pattern')    
@@ -348,14 +349,13 @@ def find_text_pattern(image, pattern_contours):
             cv2.imwrite('img_test.png',img)
             text = pytesseract.image_to_string(img)
             if 'cut two' in text or 'cut 2' in text:
-                copies = 2
+                num_of_copies = 2
                 break
             else:
-                copies = 1
+                num_of_copies = 1
             #print the text line by line
             print(text[:-1])
-
-
+        copies.append(num_of_copies)
     return copies
 
 def find_text_fold(img):
