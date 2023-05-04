@@ -358,17 +358,17 @@ def find_text_pattern(image, pattern_contours):
 
     return copies
 
-def find_text_direction(img):
+def find_text_fold(img):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     text = pytesseract.image_to_string(img)
-    if 'grainline' in text or 'fold' in text:
-        direction = 1
+    if 'fold' in text:
+        fold = 1
     else:
-        direction = 0
+        fold = 0
 
     #print the text line by line
     print(text[:-1])
-    return direction
+    return fold
 
 # Turn images transparent
 def transparent(myimage):
