@@ -358,17 +358,25 @@ def find_text_pattern(image, pattern_contours):
         copies.append(num_of_copies)
     return copies
 
-def find_text_fold(img):
+def find_text_fold(img, dir_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
-    text = pytesseract.image_to_string(img)
-    if 'fold' in text:
-        fold = 1
-    else:
-        fold = 0
-
-    #print the text line by line
-    print(text[:-1])
-    return fold
+    img0 = cv2.imread(image)
+    angle = 90
+    directions = []
+    for cnt in dir_contours:
+        for i in range (4):
+            directions_img = crop_image(cnt, img0, 'direction')    
+            img = imutils.rotate(directions_img, angle= (i * 90))
+            cv2.imwrite('img_test.png',img)
+            text = pytesseract.image_to_string(img)
+            if 'fold' in text:
+                fold = 1
+            else:
+                fold = 0
+            #print the text line by line
+            print(text[:-1])
+        directions.append(fold)
+    return directions
 
 # Turn images transparent
 def transparent(myimage):
