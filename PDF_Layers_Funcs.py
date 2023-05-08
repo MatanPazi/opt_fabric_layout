@@ -340,7 +340,7 @@ def crop_image(cnt, image, type):
 def find_text_pattern(image, pattern_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
-    angle = 90
+    angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     copies = []
     for ptrn in pattern_contours:
         for i in range (4):
@@ -361,7 +361,7 @@ def find_text_pattern(image, pattern_contours):
 def find_text_fold(img, dir_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
-    angle = 90
+    angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     directions = []
     for cnt in dir_contours:
         for i in range (4):
