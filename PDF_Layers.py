@@ -17,7 +17,7 @@ desired_layers = [Direction_Layer,Pattern_Layer]
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
 potential_dir_contours, potnetial_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 
-copies = find_text_pattern(img_out.format(num=Direction_Layer), pattern_contours)
+copies, lining, main_fabric = find_text_pattern(img_out.format(num=Direction_Layer), pattern_contours)
 fold = find_text_fold(img_out.format(num=Direction_Layer), potential_dir_contours)
 
 # img = cv2.imread(img_out.format(num=Pattern_Layer))
