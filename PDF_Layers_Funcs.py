@@ -341,22 +341,30 @@ def find_text_pattern(image, pattern_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
     angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
-    copies = []
+    copies_list = []
+    lining_list = []
+    main_fabric_list = []
     for ptrn in pattern_contours:
+        num_of_copies = 1
+        lining = 0
+        main_fabric = 1
         for i in range (4):
             copies_img = crop_image(ptrn, img0, 'pattern')    
             img = imutils.rotate(copies_img, angle= (i * 90))
             cv2.imwrite('img_test.png',img)
             text = pytesseract.image_to_string(img)
             if 'cut two' in text or 'cut 2' in text:
-                num_of_copies = 2
-                break
-            else:
-                num_of_copies = 1
+                copies = 2
+            if 'lining' in text:
+                lining = 1
+                if 'main fabric' not in text:
+                    main_fabric = 0
             #print the text line by line
             print(text[:-1])
-        copies.append(num_of_copies)
-    return copies
+        copies_list.append(copies)
+        lining_list.append(lining)
+        main_fabric_list.append(main_fabric)
+    return copies_list, lining_list, main_fabric_list
 
 def find_text_fold(img, dir_contours):
     pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
@@ -377,6 +385,7 @@ def find_text_fold(img, dir_contours):
             print(text[:-1])
         directions.append(fold)
     return directions
+
 
 # Turn images transparent
 def transparent(myimage):
