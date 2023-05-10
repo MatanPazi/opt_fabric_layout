@@ -338,53 +338,60 @@ def crop_image(cnt, image, type):
 
 
 
-def find_text_pattern(image, pattern_contours):
+def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
-        pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+        pytesseract.tesseract_cmd=r'/usr/bin/tesseract'    
     img0 = cv2.imread(image)
-    angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
+    ang_inc = 90      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     copies_list = []
     lining_list = []
     main_fabric_list = []
+    ptrn_counter = 0
     for ptrn in pattern_contours:
-        num_of_copies = 1
+        rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent contour
+        theta = rect[2]
+        copies = 1
         lining = 0
         main_fabric = 1
-        for i in range (4):
-            copies_img = crop_image(ptrn, img0, 'pattern')    
-            img = imutils.rotate(copies_img, angle= (i * 90))
+        x,y,w,h = cv2.boundingRect(ptrn)
+        cropped_img = img0[y:(y+h), x:(x+w)]
+        rotated_img = imutils.rotate(cropped_img, angle = theta)
+        for i in range (int(360/ang_inc)):  
+            img = imutils.rotate(rotated_img, angle= (i * ang_inc))
             cv2.imwrite('img_test.png',img)
-            text = pytesseract.image_to_string(img)
+            text = (pytesseract.image_to_string(img)).lower()            
+            print(text[:-1])                                    #print the text line by line
             if 'cut two' in text or 'cut 2' in text:
                 copies = 2
             if 'lining' in text:
                 lining = 1
                 if 'main fabric' not in text:
                     main_fabric = 0
-            #print the text line by line
-            print(text[:-1])
         copies_list.append(copies)
         lining_list.append(lining)
         main_fabric_list.append(main_fabric)
+        ptrn_counter += 1
     return copies_list, lining_list, main_fabric_list
 
-def find_text_fold(img, dir_contours):
+def find_text_fold(image, dir_contours):
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
         pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
-    
     img0 = cv2.imread(image)
-    angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
+    ang_inc = 90      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     directions = []
+    dir_count = 0
     for cnt in dir_contours:
-        for i in range (4):
+        rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent contour
+        theta = rect[2]
+        for i in range (int(360/ang_inc)):
             directions_img = crop_image(cnt, img0, 'direction')    
-            img = imutils.rotate(directions_img, angle= (i * 90))
+            img = imutils.rotate(directions_img, angle= (i * ang_inc))
             cv2.imwrite('img_test.png',img)
-            text = pytesseract.image_to_string(img)
+            text = (pytesseract.image_to_string(img)).lower()
             if 'fold' in text:
                 fold = 1
             else:
@@ -392,6 +399,7 @@ def find_text_fold(img, dir_contours):
             #print the text line by line
             print(text[:-1])
         directions.append(fold)
+        dir_count += 1
     return directions
 
 
