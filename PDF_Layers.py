@@ -1,12 +1,10 @@
 from PDF_Layers_Funcs import *
 import glob
 
-
 A0_Width  = 841
 A0_Height = 1189
 Direction_Layer = 1
 Pattern_Layer = 2
-# test2
 
 pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
 pdf_out = 'Out_{num}.pdf'

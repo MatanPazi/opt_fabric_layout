@@ -11,6 +11,7 @@ import numpy as np
 import math
 from pytesseract import pytesseract
 import imutils
+import platform
 
 # Extract relevant PDF layers
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
@@ -338,7 +339,10 @@ def crop_image(cnt, image, type):
 
 
 def find_text_pattern(image, pattern_contours):
-    pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    if platform.system() == 'Windows':
+        pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    else:
+        pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
     angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     copies_list = []
@@ -367,7 +371,11 @@ def find_text_pattern(image, pattern_contours):
     return copies_list, lining_list, main_fabric_list
 
 def find_text_fold(img, dir_contours):
-    pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    if platform.system() == 'Windows':
+        pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    else:
+        pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
+    
     img0 = cv2.imread(image)
     angle = 30      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
     directions = []
