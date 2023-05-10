@@ -387,8 +387,11 @@ def find_text_fold(image, dir_contours):
     for cnt in dir_contours:
         rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent contour
         theta = rect[2]
+        x,y,w,h = cv2.boundingRect(cnt)
+        cropped_img = img0[y:(y+h), x:(x+w)]
+        rotated_img = imutils.rotate(cropped_img, angle = theta)
         for i in range (int(360/ang_inc)):
-            directions_img = crop_image(cnt, img0, 'direction')    
+            directions_img = crop_image(cnt, rotated_img, 'direction')    
             img = imutils.rotate(directions_img, angle= (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()
