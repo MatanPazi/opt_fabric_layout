@@ -358,6 +358,11 @@ def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         x,y,w,h = cv2.boundingRect(ptrn)
         cropped_img = img0[y:(y+h), x:(x+w)]
         rotated_img = imutils.rotate(cropped_img, angle = theta)
+
+        # # # TODO: Consider using minAreaRect on the pattern as well and rotating it, and only then rotate according to the direction contour.
+
+
+
         for i in range (int(360/ang_inc)):  
             img = imutils.rotate(rotated_img, angle= (i * ang_inc))
             cv2.imwrite('img_test.png',img)
