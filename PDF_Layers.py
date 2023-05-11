@@ -11,6 +11,7 @@ pdf_out = 'Out_{num}.pdf'
 img_out = 'Out_{num}.png'
 desired_layers = [Direction_Layer,Pattern_Layer]
 
+# test
 # pdfLayers(pdf_name, pdf_out, desired_layers)
 # pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
