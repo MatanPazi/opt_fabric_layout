@@ -120,127 +120,98 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
     cv2.line(img, pt3, pt0, (0, 255, 0), 5)
 
 
+# Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
+# Made slight changes
+def crop_image(cnt, image, type):
+    rect = cv2.minAreaRect(cnt)
+    shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
+    center, size, theta = rect
+    width, height = tuple(map(int, size))
+    center = tuple(map(int, center))    
+    if width < height:
+        theta -= 90
+        width, height = height, width
+
+    matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
+    image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
+
+    if type == 'pattern':
+        new_height = height
+    else:
+        new_height = 4 * height         # To make sure the text is encompassed
+
+    x = int(center[0] - width // 2)
+    y = int(center[1] - new_height // 2)
+
+    image = image[y : y + new_height, x : x + width]
+
+    return image
+
+
 # Find grainline contours
 def find_potential_direction_contours(image, ptrn_cntrs):
     img = cv2.imread(image)
-    image_copy = img.copy()
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # cv2.imwrite('img.png',img)                
-    ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
-    # cv2.imwrite('thresh.png',thresh)               
-    # Get minAreaRect of pattern contours.
-    rect_ptrn = []
     ptrn_cnt_counter = 0
-    for ptrn_cnt in ptrn_cntrs:
-        rect_ptrn.append(cv2.minAreaRect(ptrn_cnt))
-        ptrn_cnt_counter += 1
-    
-    # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
-    contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
     potential_contours = []
-    potential_contour_pattern = []
-    shape = (len(contours), 1)  # len(contours) rows and 1 columns
-    x = np.zeros(shape).astype(int)
-    y = np.zeros(shape).astype(int)
-    w = np.zeros(shape).astype(int)
-    h = np.zeros(shape).astype(int)
-    theta = np.zeros(shape).astype(int)
-    
-    # image_copy = img.copy()
-    # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-    slender_rat = 3
-    min_width = 20
-    max_width = 120
-    min_len = 150
-    first = 1
-    j = 0
-    for cnt in contours:
-        if first == 1:        # First contour encompasses entire image
-            first = 0
-            continue
-        i = 0
-        dir_ptrn_flag = 0
-        potential_contours.append(cnt)
-        rect = cv2.minAreaRect(cnt)
-        x[j] = rect[0][0]
-        y[j] = rect[0][1]
-        w[j] = rect[1][0]
-        h[j] = rect[1][1]
-        theta[j] = rect[2]   
-        if w[j] == 0 or h[j] == 0:
-            x = np.delete(x, j, 0)
-            y = np.delete(y, j, 0)
-            w = np.delete(w, j, 0)
-            h = np.delete(h, j, 0) 
-            theta = np.delete(theta, j, 0)
-            potential_contours.pop(j)
-            continue
-        if w[j]/h[j] > slender_rat or h[j]/w[j] > slender_rat:
-            if w[j]/h[j] > slender_rat:
-                if (w[j] < min_len or h[j] < min_width or h[j] > max_width):
-                    x = np.delete(x, j, 0)
-                    y = np.delete(y, j, 0)
-                    w = np.delete(w, j, 0)
-                    h = np.delete(h, j, 0)
-                    theta = np.delete(theta, j, 0)
-                    potential_contours.pop(j)
-                else:
-                    for i in range(ptrn_cnt_counter):
-                        # debug = cv2.rotatedRectangleIntersection(rect, rect_ptrn[i])
-                        if cv2.rotatedRectangleIntersection(rect, rect_ptrn[i])[0] == 2:       #2 means "One of the rectangle is fully enclosed in the other"
-                            dir_ptrn_flag = 1
-                            potential_contour_pattern.append(i)
-                    if dir_ptrn_flag == 1:
-                        img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
-                        cv2.imwrite('image_copy.png',image_copy)                         
-                        j += 1
+    potential_contours_ptrn_index = []
+    for ptrn_cnt in ptrn_cntrs:
+        img_tmp = img.copy()
+        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern')    
+        img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
+        ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
+        # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
+        contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)            
+        slender_rat = 3
+        min_width = 20
+        max_width = 120
+        min_len = 150
+        first = 1
+        image_copy = img_cropped.copy()
+        # cv2.imwrite('image_copy.png',image_copy) 
+        # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        for cnt in contours:
+            if first == 1:        # First contour encompasses entire image
+                first = 0
+                continue
+            i = 0
+            rect = cv2.minAreaRect(cnt)
+            x = rect[0][0]
+            y = rect[0][1]
+            w = rect[1][0]
+            h = rect[1][1]
+            theta = rect[2]   
+            # draw_angled_rec(x, y, w, h, theta, image_copy)
+            # cv2.imwrite('image_copy.png',image_copy)  
+            if w == 0 or h == 0:
+                continue
+            if w/h > slender_rat or h/w > slender_rat:
+                if w/h > slender_rat:
+                    if (w < min_len or h < min_width or h > max_width):
+                        continue
+                    else:                    
+                        dir_ptrn_flag = 1
+                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy)
+                        cv2.imwrite('image_copy.png',image_copy)  
+                        potential_contours.append(cnt)
+                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
+                elif h/w > slender_rat:
+                    if (h < min_len or w < min_width or w > max_width):
+                        continue
                     else:
-                        x = np.delete(x, j, 0)
-                        y = np.delete(y, j, 0)
-                        w = np.delete(w, j, 0)
-                        h = np.delete(h, j, 0)
-                        theta = np.delete(theta, j, 0)
-                        potential_contours.pop(j)
-            elif h[j]/w[j] > slender_rat:
-                if (h[j] < min_len or w[j] < min_width or w[j] > max_width):
-                    x = np.delete(x, j, 0)
-                    y = np.delete(y, j, 0)
-                    w = np.delete(w, j, 0)
-                    h = np.delete(h, j, 0)    
-                    theta = np.delete(theta, j, 0)
-                    potential_contours.pop(j)
-                else:
-                    for i in range(ptrn_cnt_counter):
-                        if cv2.rotatedRectangleIntersection(rect, rect_ptrn[i])[0] == 2:       #2 means "One of the rectangle is fully enclosed in the other"
-                            dir_ptrn_flag = 1
-                            potential_contour_pattern.append(i)
-                    if dir_ptrn_flag == 1:
-                        img = draw_angled_rec(x[j], y[j], w[j], h[j], theta[j], image_copy)
+                        dir_ptrn_flag = 1
+                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy)
                         cv2.imwrite('image_copy.png',image_copy) 
-                        j += 1
-                    else:
-                        x = np.delete(x, j, 0)
-                        y = np.delete(y, j, 0)
-                        w = np.delete(w, j, 0)
-                        h = np.delete(h, j, 0)
-                        theta = np.delete(theta, j, 0)
-                        potential_contours.pop(j)
-        else:
-            x = np.delete(x, j, 0)
-            y = np.delete(y, j, 0)
-            w = np.delete(w, j, 0)
-            h = np.delete(h, j, 0)
-            theta = np.delete(theta, j, 0)
-            potential_contours.pop(j)
+                        potential_contours.append(cnt)
+                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
+        
+        # No direction contour found
+        if dir_ptrn_flag == 0:
+            ptrn_cntrs.pop(ptrn_cnt_counter)
 
-    # Ignoring patterns that have no arrow in them. 
-    for i in range(ptrn_cnt_counter):
-        if i in potential_contour_pattern:
-            continue
-        else:
-            ptrn_cntrs.pop(i)
+        dir_ptrn_flag = 0            
+        ptrn_cnt_counter += 1
 
-    return potential_contours, potential_contour_pattern, ptrn_cntrs
+    return potential_contours, potential_contours_ptrn_index, ptrn_cntrs
 
 # Find the pattern contours
 def find_pattern_contours(image):
@@ -290,6 +261,8 @@ def find_pattern_contours(image):
             good_contours.pop(j)
         else:
             j += 1
+            # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+            # cv2.imwrite('image_copy.png',image_copy)
         ## Needed for old method. Using heir now (See above).
         # for i in range(j+1): # Check if this contour is inside another contour
         #     if ((((x[j] + w[j]) < (x[i] + w[i])) and x[j] > x[i]) and
@@ -309,32 +282,7 @@ def find_pattern_contours(image):
     # cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
 
-# Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
-# Made slight changes
-def crop_image(cnt, image, type):
-    rect = cv2.minAreaRect(cnt)
-    shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
-    center, size, theta = rect
-    width, height = tuple(map(int, size))
-    center = tuple(map(int, center))    
-    if width < height:
-        theta -= 90
-        width, height = height, width
 
-    matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
-    image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
-
-    if type == 'pattern':
-        new_height = height
-    else:
-        new_height = 4 * height         # To make sure the text is encompassed
-
-    x = int(center[0] - width // 2)
-    y = int(center[1] - new_height // 2)
-
-    image = image[y : y + new_height, x : x + width]
-
-    return image
 
 
 
@@ -350,21 +298,15 @@ def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     main_fabric_list = []
     ptrn_counter = 0
     for ptrn in pattern_contours:
-        rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent contour
+        rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent direction contour
         theta = rect[2]
         copies = 1
         lining = 0
         main_fabric = 1
-        x,y,w,h = cv2.boundingRect(ptrn)
-        cropped_img = img0[y:(y+h), x:(x+w)]
-        rotated_img = imutils.rotate(cropped_img, angle = theta)
-
-        # # # TODO: Consider using minAreaRect on the pattern as well and rotating it, and only then rotate according to the direction contour.
-
-
-
+        cropped_img = crop_image(ptrn, img0, 'pattern')    
+        rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
         for i in range (int(360/ang_inc)):  
-            img = imutils.rotate(rotated_img, angle= (i * ang_inc))
+            img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()            
             print(text[:-1])                                    #print the text line by line
@@ -386,18 +328,29 @@ def find_text_fold(image, dir_contours):
     else:
         pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
     img0 = cv2.imread(image)
-    ang_inc = 90      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
+    ang_inc = 90            
     directions = []
     dir_count = 0
     for cnt in dir_contours:
-        rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent contour
+        rect = cv2.minAreaRect(cnt)
+
+        x = rect[0][0]
+        y = rect[0][1]
+        w = rect[1][0]
+        h = rect[1][1]
+        theta = rect[2]   
+
+        draw_angled_rec(x, y, w, h, theta, image_copy)
+
         theta = rect[2]
-        x,y,w,h = cv2.boundingRect(cnt)
-        cropped_img = img0[y:(y+h), x:(x+w)]
-        rotated_img = imutils.rotate(cropped_img, angle = theta)
+        cv2.imwrite('img_test.png',img0)
+        cropped_img = crop_image(cnt, img0, 'direction')    
+        cv2.imwrite('img_test.png',cropped_img)
+        rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
+        cv2.imwrite('img_test.png',rotated_img)
+
         for i in range (int(360/ang_inc)):
-            directions_img = crop_image(cnt, rotated_img, 'direction')    
-            img = imutils.rotate(directions_img, angle= (i * ang_inc))
+            img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()
             if 'fold' in text:
