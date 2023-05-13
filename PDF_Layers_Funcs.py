@@ -92,7 +92,7 @@ def pdf2image(desired_layers, pdf_out, img_out):
     # Store Pdf with convert_from_path function
     for j in range(len(desired_layers)):
         pdf_path = path + '/' + pdf_out.format(num=desired_layers[j])
-        images = convert_from_path(pdf_path,dpi=300)
+        images = convert_from_path(pdf_path,dpi=150)
         # image.save(str(desired_layers[j]) +'.jpg', 'JPEG')
         for i in range(len(images)):        
             # Save pages as images in the pdf
@@ -102,7 +102,8 @@ def pdf2image(desired_layers, pdf_out, img_out):
 
 
 # Source: https://richardpricejones.medium.com/drawing-a-rectangle-with-a-angle-using-opencv-c9284eae3380
-def draw_angled_rec(x0, y0, width, height, angle, img):
+# Made slight adjustments to color
+def draw_angled_rec(x0, y0, width, height, angle, img, color):
 
     _angle = angle * math.pi / 180.0
     b = math.cos(_angle) * 0.5
@@ -114,10 +115,16 @@ def draw_angled_rec(x0, y0, width, height, angle, img):
     pt2 = (int(2 * x0 - pt0[0]), int(2 * y0 - pt0[1]))
     pt3 = (int(2 * x0 - pt1[0]), int(2 * y0 - pt1[1]))
 
-    cv2.line(img, pt0, pt1, (0, 255, 0), 5)
-    cv2.line(img, pt1, pt2, (0, 255, 0), 5)
-    cv2.line(img, pt2, pt3, (0, 255, 0), 5)
-    cv2.line(img, pt3, pt0, (0, 255, 0), 5)
+    if color == 'green':
+        cv2.line(img, pt0, pt1, (0, 255, 0), 5)
+        cv2.line(img, pt1, pt2, (0, 255, 0), 5)
+        cv2.line(img, pt2, pt3, (0, 255, 0), 5)
+        cv2.line(img, pt3, pt0, (0, 255, 0), 5)
+    else:
+        cv2.line(img, pt0, pt1, (0, 0, 255), 5)
+        cv2.line(img, pt1, pt2, (0, 0, 255), 5)
+        cv2.line(img, pt2, pt3, (0, 0, 255), 5)
+        cv2.line(img, pt3, pt0, (0, 0, 255), 5)
 
 
 # Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
@@ -143,75 +150,13 @@ def crop_image(cnt, image, type):
     x = int(center[0] - width // 2)
     y = int(center[1] - new_height // 2)
 
+# TODO: Add upper and lower bounds to x and y
+    if x < 0
+
     image = image[y : y + new_height, x : x + width]
 
     return image
 
-
-# Find grainline contours
-def find_potential_direction_contours(image, ptrn_cntrs):
-    img = cv2.imread(image)
-    ptrn_cnt_counter = 0
-    potential_contours = []
-    potential_contours_ptrn_index = []
-    for ptrn_cnt in ptrn_cntrs:
-        img_tmp = img.copy()
-        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern')    
-        img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
-        ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
-        # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
-        contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)            
-        slender_rat = 3
-        min_width = 20
-        max_width = 120
-        min_len = 150
-        first = 1
-        image_copy = img_cropped.copy()
-        # cv2.imwrite('image_copy.png',image_copy) 
-        # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-        for cnt in contours:
-            if first == 1:        # First contour encompasses entire image
-                first = 0
-                continue
-            i = 0
-            rect = cv2.minAreaRect(cnt)
-            x = rect[0][0]
-            y = rect[0][1]
-            w = rect[1][0]
-            h = rect[1][1]
-            theta = rect[2]   
-            # draw_angled_rec(x, y, w, h, theta, image_copy)
-            # cv2.imwrite('image_copy.png',image_copy)  
-            if w == 0 or h == 0:
-                continue
-            if w/h > slender_rat or h/w > slender_rat:
-                if w/h > slender_rat:
-                    if (w < min_len or h < min_width or h > max_width):
-                        continue
-                    else:                    
-                        dir_ptrn_flag = 1
-                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy)
-                        cv2.imwrite('image_copy.png',image_copy)  
-                        potential_contours.append(cnt)
-                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
-                elif h/w > slender_rat:
-                    if (h < min_len or w < min_width or w > max_width):
-                        continue
-                    else:
-                        dir_ptrn_flag = 1
-                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy)
-                        cv2.imwrite('image_copy.png',image_copy) 
-                        potential_contours.append(cnt)
-                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
-        
-        # No direction contour found
-        if dir_ptrn_flag == 0:
-            ptrn_cntrs.pop(ptrn_cnt_counter)
-
-        dir_ptrn_flag = 0            
-        ptrn_cnt_counter += 1
-
-    return potential_contours, potential_contours_ptrn_index, ptrn_cntrs
 
 # Find the pattern contours
 def find_pattern_contours(image):
@@ -227,7 +172,7 @@ def find_pattern_contours(image):
     img = cv2.erode(img, kernel, iterations=6)
     img = cv2.dilate(img, kernel, iterations=3)
     ## For debugging
-    # image_copy = img.copy()
+    image_copy = img.copy()
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
@@ -278,15 +223,81 @@ def find_pattern_contours(image):
         #         j += 1
         counter += 1
     ## For debugging
-    # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-    # cv2.imwrite('image_copy.png',image_copy)
+    cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
 
 
+# Find grainline contours
+def find_potential_direction_contours(image, ptrn_cntrs):
+    img = cv2.imread(image)
+    ptrn_cnt_counter = 0
+    potential_contours = []
+    potential_contours_ptrn_index = []
+    ptrn_cntrs_new = []
+    dir_ptrn_flag = 0
+    for ptrn_cnt in ptrn_cntrs:
+        img_tmp = img.copy()
+        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern')    
+        img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
+        ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
+        # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
+        contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)            
+        slender_rat = 3
+        min_width = 10
+        max_width = 120
+        min_len = 150
+        first = 1
+        image_copy = img_cropped.copy()
+        cv2.imwrite('image_copy.png',image_copy) 
+        # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        for cnt in contours:
+            if first == 1:        # First contour encompasses entire image
+                first = 0
+                continue
+            i = 0
+            rect = cv2.minAreaRect(cnt)
+            x = rect[0][0]
+            y = rect[0][1]
+            w = rect[1][0]
+            h = rect[1][1]
+            theta = rect[2]   
+            draw_angled_rec(x, y, w, h, theta, image_copy, 'green')
+            cv2.imwrite('image_copy.png',image_copy)  
+            if w == 0 or h == 0:
+                continue
+            if w/h > slender_rat or h/w > slender_rat:
+                if w/h > slender_rat:
+                    if (w < min_len or h < min_width or h > max_width):
+                        continue
+                    else:                    
+                        dir_ptrn_flag = 1
+                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
+                        cv2.imwrite('image_copy.png',image_copy)  
+                        potential_contours.append(cnt)
+                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
+                elif h/w > slender_rat:
+                    if (h < min_len or w < min_width or w > max_width):
+                        continue
+                    else:
+                        dir_ptrn_flag = 1
+                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
+                        cv2.imwrite('image_copy.png',image_copy) 
+                        potential_contours.append(cnt)
+                        potential_contours_ptrn_index.append(ptrn_cnt_counter)
+        
+        # No direction contour found
+        if dir_ptrn_flag == 0:
+            continue
+
+        ptrn_cntrs_new.append(ptrn_cnt)
+        dir_ptrn_flag = 0            
+        ptrn_cnt_counter += 1
+
+    return potential_contours, potential_contours_ptrn_index, ptrn_cntrs_new
 
 
-
-def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
+def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
@@ -296,6 +307,9 @@ def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     copies_list = []
     lining_list = []
     main_fabric_list = []
+    fold_list = []
+    dir_cnt_np = np.array(dir_cnt, dtype=object)
+    dir_ptrn_cnt_np = np.array(dir_ptrn_cnt, dtype=object)
     ptrn_counter = 0
     for ptrn in pattern_contours:
         rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent direction contour
@@ -303,9 +317,35 @@ def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         copies = 1
         lining = 0
         main_fabric = 1
+        fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern')    
+        cv2.imwrite('img_test.png',cropped_img)
+        for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
+
+            rect = cv2.minAreaRect(cnt)
+            x = rect[0][0]
+            y = rect[0][1]
+            w = rect[1][0]
+            h = rect[1][1]
+            theta = rect[2]   
+            draw_angled_rec(x, y, w, h, theta, cropped_img, 'green')
+            cv2.imwrite('img_test.png',cropped_img)
+
+            dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
+            cv2.imwrite('img_test.png',dir_cropped_img)
+            for i in range (int(360/ang_inc) - 1):
+                img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))
+                cv2.imwrite('img_test.png',img)
+                text = (pytesseract.image_to_string(img)).lower()
+                if 'fold' in text:
+                    fold.append(cnt)
+                    break
+                #print the text line by line
+                print(text[:-1])
+        fold_list.append(fold)
+        
         rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
-        for i in range (int(360/ang_inc)):  
+        for i in range (int(360/ang_inc) - 1):  
             img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()            
@@ -320,48 +360,7 @@ def find_text_pattern(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         lining_list.append(lining)
         main_fabric_list.append(main_fabric)
         ptrn_counter += 1
-    return copies_list, lining_list, main_fabric_list
-
-def find_text_fold(image, dir_contours):
-    if platform.system() == 'Windows':
-        pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    else:
-        pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
-    img0 = cv2.imread(image)
-    ang_inc = 90            
-    directions = []
-    dir_count = 0
-    for cnt in dir_contours:
-        rect = cv2.minAreaRect(cnt)
-
-        x = rect[0][0]
-        y = rect[0][1]
-        w = rect[1][0]
-        h = rect[1][1]
-        theta = rect[2]   
-
-        draw_angled_rec(x, y, w, h, theta, image_copy)
-
-        theta = rect[2]
-        cv2.imwrite('img_test.png',img0)
-        cropped_img = crop_image(cnt, img0, 'direction')    
-        cv2.imwrite('img_test.png',cropped_img)
-        rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
-        cv2.imwrite('img_test.png',rotated_img)
-
-        for i in range (int(360/ang_inc)):
-            img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
-            cv2.imwrite('img_test.png',img)
-            text = (pytesseract.image_to_string(img)).lower()
-            if 'fold' in text:
-                fold = 1
-            else:
-                fold = 0
-            #print the text line by line
-            print(text[:-1])
-        directions.append(fold)
-        dir_count += 1
-    return directions
+    return copies_list, lining_list, main_fabric_list, fold_list
 
 
 # Turn images transparent
