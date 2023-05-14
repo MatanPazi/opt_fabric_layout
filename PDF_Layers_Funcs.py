@@ -138,10 +138,20 @@ def crop_image(cnt, image, type):
     if width < height:
         theta -= 90
         width, height = height, width
+        shape = (image.shape[0], image.shape[1])  # cv2.warpAffine expects shape in (length, height)
 
-    matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
-    image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
+    # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
+    # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
 
+    draw_angled_rec(100, 300, 50, 50, 0, image, 'green')
+    cv2.imwrite('img_test.png',image)
+
+    image = imutils.rotate_bound(image, angle = 45)
+    cv2.imwrite('img_test.png',image)
+
+    draw_angled_rec(100, 300, 50, 50, 0, image, 'red')
+
+    cv2.imwrite('img_test.png',image)
     if type == 'pattern':
         new_height = height
     else:
@@ -151,7 +161,14 @@ def crop_image(cnt, image, type):
     y = int(center[1] - new_height // 2)
 
 # TODO: Add upper and lower bounds to x and y
-    if x < 0
+    if x < 0:
+        x = 0
+    elif x > shape[0]:
+        x = shape[0]
+    if y < 0:
+        y = 0
+    elif y > shape[1]:
+        y = shape[1]
 
     image = image[y : y + new_height, x : x + width]
 
