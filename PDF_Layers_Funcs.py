@@ -138,48 +138,45 @@ def crop_image(cnt, image, type):
     if width < height:
         theta -= 90
         width, height = height, width
-        shape = (image.shape[0], image.shape[1])  # cv2.warpAffine expects shape in (length, height)
 
     # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
     # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
-    cv2.imwrite('img_test.png',image)
 
-    cv2.line(image, [0,0], [1000,2000], (0, 255, 0), 5)
-    
-    cv2.imwrite('img_test.png',image)
 
-# theta - Angle of rotation
+# theta - Angle of rotation when using imutils.rotate_bound
 # x_offset = sin(theta) * shape[1], (Assuming shape[1] is the max y value in the OG image)
 # ynew = yold*cos(theta) + xold*sin(theta)
-# phi = acos(ynew)/sqrt(xold^2+yold^2)
+# phi = acos(ynew/sqrt(xold^2+yold^2)
 # xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
-
-    image = imutils.rotate_bound(image, angle = 60)
-    shape_rotated = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
+# 
+#    
+    theta = 10
+    theta_rad = math.radians(theta)
     cv2.imwrite('img_test.png',image)
 
-    cv2.line(image, [0,0], [1000,2000], (0, 255, 0), 5)
-
+    x_old = int(center[0] - width // 2)
+    y_old = int(center[1] - height // 2)
+    distance = math.sqrt(x_old**2+y_old**2)
+    cv2.line(image, [0,0], [x_old,y_old], (0, 255, 0), 5)
     cv2.imwrite('img_test.png',image)
+    image = imutils.rotate_bound(image, angle = theta)
+    cv2.imwrite('img_test.png',image)
+
+    x_offset = math.sin(theta_rad) * shape[1]
+    y_new = y_old*math.cos(theta_rad) + x_old*math.sin(theta_rad)
+    phi = math.acos(y_new/distance)
+    x_new = x_offset + math.sin(phi)*distance
+
+    cv2.line(image, [0,0], [math.floor(x_new),math.floor(y_new)], (0, 255, 0), 5)
+    cv2.imwrite('img_test.png',image)
+
     if type == 'pattern':
         new_height = height
     else:
         new_height = 4 * height         # To make sure the text is encompassed
 
-    x = int(center[0] - width // 2)
-    y = int(center[1] - new_height // 2)
 
-# TODO: Add upper and lower bounds to x and y
-    if x < 0:
-        x = 0
-    elif x > shape[0]:
-        x = shape[0]
-    if y < 0:
-        y = 0
-    elif y > shape[1]:
-        y = shape[1]
-
-    image = image[y : y + new_height, x : x + width]
+    image = image[y_new : y_new + new_height, x_new : x_new + width]
 
     return image
 
