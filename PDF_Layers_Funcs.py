@@ -142,14 +142,23 @@ def crop_image(cnt, image, type):
 
     # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
     # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
-
-    draw_angled_rec(100, 300, 50, 50, 0, image, 'green')
     cv2.imwrite('img_test.png',image)
 
-    image = imutils.rotate_bound(image, angle = 45)
+    cv2.line(image, [0,0], [1000,2000], (0, 255, 0), 5)
+    
     cv2.imwrite('img_test.png',image)
 
-    draw_angled_rec(100, 300, 50, 50, 0, image, 'red')
+# theta - Angle of rotation
+# x_offset = sin(theta) * shape[1], (Assuming shape[1] is the max y value in the OG image)
+# ynew = yold*cos(theta) + xold*sin(theta)
+# phi = acos(ynew)/sqrt(xold^2+yold^2)
+# xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
+
+    image = imutils.rotate_bound(image, angle = 60)
+    shape_rotated = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
+    cv2.imwrite('img_test.png',image)
+
+    cv2.line(image, [0,0], [1000,2000], (0, 255, 0), 5)
 
     cv2.imwrite('img_test.png',image)
     if type == 'pattern':
