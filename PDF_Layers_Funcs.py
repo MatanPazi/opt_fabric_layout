@@ -136,22 +136,23 @@ def crop_image(cnt, image, type):
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
     if theta != 0:
-        theta += 90
+        alpha = 90 - theta
         if width > height:
             width, height = height, width
-            theta += 90
+            alpha += 90
+    else:
+        alpha = theta
 
-    # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
+    # matrix = cv2.getRotationMatrix2D(center=center, angle=alpha, scale=1.0)
     # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
 
 
-# theta - Angle of rotation when using imutils.rotate_bound
-# x_offset = sin(theta) * shape[1], (Assuming shape[1] is the max y value in the OG image)
-# ynew = yold*cos(theta) + xold*sin(theta)
+# alpha - Angle of rotation when using imutils.rotate_bound
+# x_offset = sin(alpha) * shape[1], (Assuming shape[1] is the max y value in the OG image)
+# ynew = yold*cos(alpha) + xold*sin(alpha)
 # phi - acos(ynew/sqrt(xold^2+yold^2)
 # xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
 #    
-    theta_rad = math.radians(theta)
     cv2.imwrite('img_test.png',image)
 
     x_old = int(center[0] - width // 2)
@@ -159,13 +160,17 @@ def crop_image(cnt, image, type):
     distance = math.sqrt(x_old**2+y_old**2)
     cv2.line(image, [0,0], [x_old,y_old], (0, 255, 0), 5)
     cv2.imwrite('img_test.png',image)
-    image = imutils.rotate_bound(image, angle = theta)
+    image = imutils.rotate_bound(image, angle = alpha)
     cv2.imwrite('img_test.png',image)
 
     # cv2.imwrite('img_test.png',image)
+    if alpha > 90:
+        alpha_rad = math.radians(alpha - 90)
+    else:
+        alpha_rad = math.radians(alpha)
 
-    x_offset = math.sin(theta_rad) * shape[1]
-    y_temp = y_old*math.cos(theta_rad) + x_old*math.sin(theta_rad)
+    y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
+    x_offset = math.sin(math.acos(y_temp/distance)) * distance
     phi = math.acos(y_temp/distance)
     x_temp = x_offset + math.sin(phi)*distance
     y_new = math.floor(y_temp)
