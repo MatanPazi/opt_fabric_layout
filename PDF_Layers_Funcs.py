@@ -136,8 +136,9 @@ def crop_image(cnt, image, type):
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
     if width < height:
-        theta -= 90
-        width, height = height, width
+        # theta -= 90
+        # width, height = height, width
+        theta = theta
 
     # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
     # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
@@ -146,11 +147,9 @@ def crop_image(cnt, image, type):
 # theta - Angle of rotation when using imutils.rotate_bound
 # x_offset = sin(theta) * shape[1], (Assuming shape[1] is the max y value in the OG image)
 # ynew = yold*cos(theta) + xold*sin(theta)
-# phi = acos(ynew/sqrt(xold^2+yold^2)
+# phi - acos(ynew/sqrt(xold^2+yold^2)
 # xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
-# 
 #    
-    theta = 10
     theta_rad = math.radians(theta)
     cv2.imwrite('img_test.png',image)
 
@@ -162,10 +161,14 @@ def crop_image(cnt, image, type):
     image = imutils.rotate_bound(image, angle = theta)
     cv2.imwrite('img_test.png',image)
 
+    # cv2.imwrite('img_test.png',image)
+
     x_offset = math.sin(theta_rad) * shape[1]
-    y_new = y_old*math.cos(theta_rad) + x_old*math.sin(theta_rad)
-    phi = math.acos(y_new/distance)
-    x_new = x_offset + math.sin(phi)*distance
+    y_temp = y_old*math.cos(theta_rad) + x_old*math.sin(theta_rad)
+    phi = math.acos(y_temp/distance)
+    x_temp = x_offset + math.sin(phi)*distance
+    y_new = math.floor(y_temp)
+    x_new = math.floor(x_temp)
 
     cv2.line(image, [0,0], [math.floor(x_new),math.floor(y_new)], (0, 255, 0), 5)
     cv2.imwrite('img_test.png',image)
@@ -228,7 +231,19 @@ def find_pattern_contours(image):
             # h = np.delete(h, j, 0)
             good_contours.pop(j)
         else:
+            # For debugging
+            rect = cv2.minAreaRect(cnt)
+            x = rect[0][0]
+            y = rect[0][1]
+            w = rect[1][0]
+            h = rect[1][1]
+            theta = rect[2]   
+            draw_angled_rec(x, y, w, h, theta, image_copy, 'green')
+            cv2.imwrite('image_copy.png',image_copy)              
             j += 1
+            # 
+
+
             # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
             # cv2.imwrite('image_copy.png',image_copy)
         ## Needed for old method. Using heir now (See above).
