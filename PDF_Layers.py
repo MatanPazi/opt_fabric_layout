@@ -9,19 +9,15 @@ A0_Height = 1189
 # Pattern_Layer = 2
 # pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
 
-# Direction_Layer = 0
-# Pattern_Layer = 3
-# pdf_name = 'LL Leo Pattern Size A0.pdf'
-
 Direction_Layer = 0
-Pattern_Layer = 0
+Pattern_Layer = 3
+pdf_name = 'LL Leo Pattern Size A0.pdf'
 
 pdf_out = 'Out_{num}.pdf'
 img_out = 'Out_{num}.png'
-# desired_layers = [Direction_Layer,Pattern_Layer]
-desired_layers = [0]
+desired_layers = [Direction_Layer,Pattern_Layer]
 
-# pdfLayers(pdf_name, pdf_out, desired_layers)
+pdfLayers(pdf_name, pdf_out, desired_layers)
 pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)

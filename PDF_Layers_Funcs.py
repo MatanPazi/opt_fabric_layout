@@ -135,10 +135,11 @@ def crop_image(cnt, image, type):
     center, size, theta = rect
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
-    if width < height:
-        # theta -= 90
-        # width, height = height, width
-        theta = theta
+    if theta != 0:
+        theta += 90
+        if width > height:
+            width, height = height, width
+            theta += 90
 
     # matrix = cv2.getRotationMatrix2D(center=center, angle=theta, scale=1.0)
     # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
@@ -230,20 +231,8 @@ def find_pattern_contours(image):
             # w = np.delete(w, j, 0)
             # h = np.delete(h, j, 0)
             good_contours.pop(j)
-        else:
-            # For debugging
-            rect = cv2.minAreaRect(cnt)
-            x = rect[0][0]
-            y = rect[0][1]
-            w = rect[1][0]
-            h = rect[1][1]
-            theta = rect[2]   
-            draw_angled_rec(x, y, w, h, theta, image_copy, 'green')
-            cv2.imwrite('image_copy.png',image_copy)              
+        else:             
             j += 1
-            # 
-
-
             # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
             # cv2.imwrite('image_copy.png',image_copy)
         ## Needed for old method. Using heir now (See above).
@@ -372,7 +361,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
             cv2.imwrite('img_test.png',dir_cropped_img)
             for i in range (int(360/ang_inc) - 1):
-                img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))
+                img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
                 text = (pytesseract.image_to_string(img)).lower()
                 if 'fold' in text:
