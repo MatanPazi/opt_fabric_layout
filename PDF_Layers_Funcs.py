@@ -135,11 +135,12 @@ def crop_image(cnt, image, type):
     center, size, theta = rect
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
+    # Allow only for angles of rotation lower than 90 degrees.
+    # To simplify handling.
     if theta != 0:
         alpha = 90 - theta
-        if width > height:
+        if width < height:
             width, height = height, width
-            alpha += 90
     else:
         alpha = theta
 
@@ -155,8 +156,10 @@ def crop_image(cnt, image, type):
 #    
     cv2.imwrite('img_test.png',image)
 
-    x_old = int(center[0] - width // 2)
-    y_old = int(center[1] - height // 2)
+    # x_old = int(center[0] - width // 2)
+    # y_old = int(center[1] - height // 2)
+    x_old = int(center[0])
+    y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
     cv2.line(image, [0,0], [x_old,y_old], (0, 255, 0), 5)
     cv2.imwrite('img_test.png',image)
@@ -170,7 +173,8 @@ def crop_image(cnt, image, type):
         alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
-    x_offset = math.sin(math.acos(y_temp/distance)) * distance
+    x_offset = math.sin(alpha_rad) * shape[0]
+    # x_offset = math.sin(math.acos(y_temp/distance)) * distance
     phi = math.acos(y_temp/distance)
     x_temp = x_offset + math.sin(phi)*distance
     y_new = math.floor(y_temp)
