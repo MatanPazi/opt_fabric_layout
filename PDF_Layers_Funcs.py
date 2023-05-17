@@ -137,7 +137,7 @@ def crop_image(cnt, image, type):
     center = tuple(map(int, center))    
     # Allow only for angles of rotation lower than 90 degrees.
     # To simplify handling.
-    if theta != 0:
+    if theta != 0 and theta != 90:
         alpha = 90 - theta
         if width < height:
             width, height = height, width
@@ -152,8 +152,12 @@ def crop_image(cnt, image, type):
 # x_offset = sin(alpha) * shape[1], (Assuming shape[1] is the max y value in the OG image)
 # ynew = yold*cos(alpha) + xold*sin(alpha)
 # phi - acos(ynew/sqrt(xold^2+yold^2)
-# xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
-#    
+# beta - atan(yold/xold)
+# if beta > alpha
+    # xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
+# else
+    # xnew = x_offset - sin(phi)*sqrt(xold^2+yold^2)     
+
     cv2.imwrite('img_test.png',image)
 
     # x_old = int(center[0] - width // 2)
@@ -167,16 +171,19 @@ def crop_image(cnt, image, type):
     cv2.imwrite('img_test.png',image)
 
     # cv2.imwrite('img_test.png',image)
-    if alpha > 90:
-        alpha_rad = math.radians(alpha - 90)
-    else:
-        alpha_rad = math.radians(alpha)
+
+    alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
-    x_offset = math.sin(alpha_rad) * shape[0]
+    x_offset = math.sin(alpha_rad) * max(shape)
     # x_offset = math.sin(math.acos(y_temp/distance)) * distance
     phi = math.acos(y_temp/distance)
-    x_temp = x_offset + math.sin(phi)*distance
+    beta = math.atan2(x_old, y_old)
+    if beta > alpha_rad:
+        x_temp = x_offset + math.sin(phi)*distance
+    else:
+        x_temp = x_offset - math.sin(phi)*distance
+    
     y_new = math.floor(y_temp)
     x_new = math.floor(x_temp)
 
