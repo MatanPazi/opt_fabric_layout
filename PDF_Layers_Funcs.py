@@ -135,48 +135,30 @@ def crop_image(cnt, image, type):
     center, size, theta = rect
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
+
     # Allow only for angles of rotation lower than 90 degrees.
     # To simplify handling.
-    if theta != 0 and theta != 90:
+    if theta == 90:
+        alpha = 0
+        width, height = height, width
+    elif theta == 0:
+        alpha = 0        
+    else:                    # theta != 0 and theta != 90:
         alpha = 90 - theta
-        if width < height:
-            width, height = height, width
-    else:
-        alpha = theta
+        # if width < height:
+        width, height = height, width
 
-    # matrix = cv2.getRotationMatrix2D(center=center, angle=alpha, scale=1.0)
-    # image = cv2.warpAffine(src=image, M=matrix, dsize=shape)
-
-
-# alpha - Angle of rotation when using imutils.rotate_bound
-# x_offset = sin(alpha) * shape[1], (Assuming shape[1] is the max y value in the OG image)
-# ynew = yold*cos(alpha) + xold*sin(alpha)
-# phi - acos(ynew/sqrt(xold^2+yold^2)
-# beta - atan(yold/xold)
-# if beta > alpha
-    # xnew = x_offset + sin(phi)*sqrt(xold^2+yold^2)
-# else
-    # xnew = x_offset - sin(phi)*sqrt(xold^2+yold^2)     
-
-    cv2.imwrite('img_test.png',image)
-
-    # x_old = int(center[0] - width // 2)
-    # y_old = int(center[1] - height // 2)
     x_old = int(center[0])
     y_old = int(center[1])
+    # x_old = int(center[0])
+    # y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
-    cv2.line(image, [0,0], [x_old,y_old], (0, 255, 0), 5)
-    cv2.imwrite('img_test.png',image)
     image = imutils.rotate_bound(image, angle = alpha)
-    cv2.imwrite('img_test.png',image)
-
-    # cv2.imwrite('img_test.png',image)
 
     alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
     x_offset = math.sin(alpha_rad) * max(shape)
-    # x_offset = math.sin(math.acos(y_temp/distance)) * distance
     phi = math.acos(y_temp/distance)
     beta = math.atan2(x_old, y_old)
     if beta > alpha_rad:
@@ -187,16 +169,29 @@ def crop_image(cnt, image, type):
     y_new = math.floor(y_temp)
     x_new = math.floor(x_temp)
 
-    cv2.line(image, [0,0], [math.floor(x_new),math.floor(y_new)], (0, 255, 0), 5)
-    cv2.imwrite('img_test.png',image)
-
     if type == 'pattern':
-        new_height = height
+        new_height = height // 2
+        new_width = width // 2
     else:
-        new_height = 4 * height         # To make sure the text is encompassed
+        if width < height:
+            new_height = height // 2
+            new_width = math.floor(2 * width)         # To make sure the text is encompassed
+        else:
+            new_width = width // 2
+            new_height = math.floor(2 * height)         # To make sure the text is encompassed
 
-
-    image = image[y_new : y_new + new_height, x_new : x_new + width]
+    if (y_new - new_height) < 0:
+        y_new = new_height
+    elif (y_new + new_height) > image.shape[0]:
+        y_new = image.shape[0] - new_height
+    
+    if (x_new - new_width) < 0:
+        x_new = new_width
+    elif (x_new + new_width) > image.shape[1]:
+        x_new = image.shape[1] - new_width
+    
+    image = image[y_new - new_height : y_new + new_height, x_new - new_width: x_new + new_width]
+    cv2.imwrite('img_test.png',image)
 
     return image
 
