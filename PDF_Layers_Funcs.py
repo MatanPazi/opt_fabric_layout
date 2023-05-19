@@ -336,6 +336,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
 
 
 def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
+    pattern_img = 'pattern_{num}.png'
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
@@ -357,17 +358,8 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern')    
+        cv2.imwrite(pattern_img.format(num=ptrn_counter),cropped_img)        
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
-
-            # rect = cv2.minAreaRect(cnt)
-            # x = rect[0][0]
-            # y = rect[0][1]
-            # w = rect[1][0]
-            # h = rect[1][1]
-            # theta = rect[2]   
-            # draw_angled_rec(x, y, w, h, theta, cropped_img, 'green')
-            # cv2.imwrite('img_test.png',cropped_img)
-
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
             for i in range (int(360/ang_inc) - 1):
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
@@ -400,6 +392,66 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric_list.append(main_fabric)
         ptrn_counter += 1
     return copies_list, lining_list, main_fabric_list, fold_list
+
+
+def fold_patterns(fold_list):
+    pattern_img = 'pattern_{num}.png'
+    for i in range(len(fold_list)):
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
+        img = ptrn_img.copy()
+        if fold_list[i] == 0:
+            continue
+        else:
+            for j in range(len(fold_list[i])):
+                if len(fold_list[i]) > 1:
+                    rect = cv2.minAreaRect(fold_list[i][j][0])
+                else:
+                    rect = cv2.minAreaRect(fold_list[i][0])
+                x = rect[0][0]
+                y = rect[0][1]
+                w = rect[1][0]
+                h = rect[1][1]
+                theta = rect[2] 
+                if theta == 0:
+                    if w > h:
+                        flip_code = 0
+                        if y < (img.shape[0] // 2):
+                            flip_side = 'up'
+                        else:
+                            flip_side = 'down'
+                    else:
+                        flip_code = 1
+                        if x < (img.shape[1] // 2):
+                            flip_side = 'left'
+                        else:
+                            flip_side = 'right'
+                else: #theta == 90
+                    if w > h:
+                        flip_code = 1
+                        if x < (img.shape[1] // 2):
+                            flip_side = 'left'
+                        else:
+                            flip_side = 'right'
+                    else:
+                        flip_code = 0
+                        if y < (img.shape[0] // 2):
+                            flip_side = 'up'
+                        else:
+                            flip_side = 'down'
+                    
+                img_flipped = cv2.flip(img, flip_code)
+                if flip_code == 0:
+                    if flip_side == 'up':
+                        stitched_img = cv2.vconcat([img_flipped, img])
+                    else:
+                        stitched_img = cv2.vconcat([img, img_flipped])
+                else:
+                    if flip_side == 'left':
+                        stitched_img = cv2.hconcat([img_flipped, img])
+                    else:
+                        stitched_img = cv2.hconcat([img, img_flipped])
+                cv2.imwrite('img_test.png',stitched_img)
+
 
 
 # Turn images transparent
