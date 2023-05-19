@@ -357,30 +357,31 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern')    
-        cv2.imwrite('img_test.png',cropped_img)
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
 
-            rect = cv2.minAreaRect(cnt)
-            x = rect[0][0]
-            y = rect[0][1]
-            w = rect[1][0]
-            h = rect[1][1]
-            theta = rect[2]   
-            draw_angled_rec(x, y, w, h, theta, cropped_img, 'green')
-            cv2.imwrite('img_test.png',cropped_img)
+            # rect = cv2.minAreaRect(cnt)
+            # x = rect[0][0]
+            # y = rect[0][1]
+            # w = rect[1][0]
+            # h = rect[1][1]
+            # theta = rect[2]   
+            # draw_angled_rec(x, y, w, h, theta, cropped_img, 'green')
+            # cv2.imwrite('img_test.png',cropped_img)
 
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
-            cv2.imwrite('img_test.png',dir_cropped_img)
             for i in range (int(360/ang_inc) - 1):
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
                 text = (pytesseract.image_to_string(img)).lower()
-                if 'fold' in text:
-                    fold.append(cnt)
-                    break
-                #print the text line by line
                 print(text[:-1])
-        fold_list.append(fold)
+                if 'fold' in text:
+                    fold.append(cnt)                
+                    break
+
+        if len(fold) == 0:                         
+            fold_list.append(0)
+        else:
+            fold_list.append(fold)
         
         rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
         for i in range (int(360/ang_inc) - 1):  
