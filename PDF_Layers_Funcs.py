@@ -86,13 +86,16 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
 # Save each pdf as an image
 def pdf2image(desired_layers, pdf_out, img_out):
 
+    A0_Width  = 841
+    A0_Height = 1189
+    img_size = (A0_Width, A0_Height)
     # path = os.path.realpath(os.path.dirname(__file__))
     path = os.getcwd()
 
     # Store Pdf with convert_from_path function
     for j in range(len(desired_layers)):
         pdf_path = path + '/' + pdf_out.format(num=desired_layers[j])
-        images = convert_from_path(pdf_path,dpi=150)
+        images = convert_from_path(pdf_path, dpi=150)
         # image.save(str(desired_layers[j]) +'.jpg', 'JPEG')
         for i in range(len(images)):        
             # Save pages as images in the pdf
@@ -209,8 +212,10 @@ def find_pattern_contours(image):
     # you want to erode/dilate a given image.
     img = cv2.erode(img, kernel, iterations=6)
     img = cv2.dilate(img, kernel, iterations=3)
+    # img = cv2.erode(img, kernel, iterations=3)
     ## For debugging
-    image_copy = img.copy()
+    # image_copy = img.copy()
+    # cv2.imwrite(image,img)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
@@ -261,8 +266,8 @@ def find_pattern_contours(image):
         #         j += 1
         counter += 1
     ## For debugging
-    cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-    cv2.imwrite('image_copy.png',image_copy)
+    # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    # cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
 
 
@@ -335,8 +340,18 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     return potential_contours, potential_contours_ptrn_index, ptrn_cntrs_new
 
 
+def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
+    kernel_size = 10
+    img0 = cv2.imread(ptrn_image)
+    for i in range(len(pattern_contours)):
+        img_cropped = crop_image(pattern_contours[i], img0, 'pattern')    
+        img_cropped = img_cropped[kernel_size : img_cropped.shape[0] - kernel_size, kernel_size: img_cropped.shape[1] - kernel_size]
+        cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
+    
+
+
+
 def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
-    pattern_img = 'pattern_{num}.png'
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
@@ -358,7 +373,6 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern')    
-        cv2.imwrite(pattern_img.format(num=ptrn_counter),cropped_img)        
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
             for i in range (int(360/ang_inc) - 1):
@@ -394,17 +408,17 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     return copies_list, lining_list, main_fabric_list, fold_list
 
 
-def fold_patterns(fold_list):
-    pattern_img = 'pattern_{num}.png'
+def fold_patterns(fold_list, pattern_img):
     for i in range(len(fold_list)):
-        ptrn_img = cv2.imread(pattern_img.format(num = i))
-        img = ptrn_img.copy()
         if fold_list[i] == 0:
             continue
         else:
+            flip_code = -1
             for j in range(len(fold_list[i])):
+                ptrn_img = cv2.imread(pattern_img.format(num = i))
+                img = ptrn_img.copy()
                 if len(fold_list[i]) > 1:
-                    rect = cv2.minAreaRect(fold_list[i][j][0])
+                    rect = cv2.minAreaRect(fold_list[i][j])
                 else:
                     rect = cv2.minAreaRect(fold_list[i][0])
                 x = rect[0][0]
@@ -414,26 +428,38 @@ def fold_patterns(fold_list):
                 theta = rect[2] 
                 if theta == 0:
                     if w > h:
-                        flip_code = 0
+                        if flip_code == 0:
+                            break
+                        else:
+                            flip_code = 0
                         if y < (img.shape[0] // 2):
                             flip_side = 'up'
                         else:
                             flip_side = 'down'
                     else:
-                        flip_code = 1
+                        if flip_code == 1:
+                            break
+                        else:
+                            flip_code = 1
                         if x < (img.shape[1] // 2):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
                 else: #theta == 90
                     if w > h:
-                        flip_code = 1
+                        if flip_code == 1:
+                            break
+                        else:
+                            flip_code = 1
                         if x < (img.shape[1] // 2):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
                     else:
-                        flip_code = 0
+                        if flip_code == 0:
+                            break
+                        else:
+                            flip_code = 0
                         if y < (img.shape[0] // 2):
                             flip_side = 'up'
                         else:
@@ -451,6 +477,7 @@ def fold_patterns(fold_list):
                     else:
                         stitched_img = cv2.hconcat([img, img_flipped])
                 cv2.imwrite('img_test.png',stitched_img)
+                cv2.imwrite(pattern_img.format(num = i), stitched_img)
 
 
 
