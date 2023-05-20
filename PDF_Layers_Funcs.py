@@ -215,7 +215,7 @@ def find_pattern_contours(image):
     # img = cv2.erode(img, kernel, iterations=3)
     ## For debugging
     # image_copy = img.copy()
-    # cv2.imwrite(image,img)
+    cv2.imwrite('image_copy.png',img)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
@@ -341,7 +341,10 @@ def find_potential_direction_contours(image, ptrn_cntrs):
 
 
 def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
-    kernel_size = 10
+    # TODO: remove the empty borders.
+    # Consider locating contours and looking for min & max in y and x directions and remove the diff from img height and width.
+    
+    kernel_size = 0
     img0 = cv2.imread(ptrn_image)
     for i in range(len(pattern_contours)):
         img_cropped = crop_image(pattern_contours[i], img0, 'pattern')    
