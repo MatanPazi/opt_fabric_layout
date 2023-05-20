@@ -1,10 +1,6 @@
 from PDF_Layers_Funcs import *
 import glob
 
-A0_Width  = 841
-A0_Height = 1189
-
-
 # Direction_Layer = 1
 # Pattern_Layer = 2
 # pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
@@ -15,14 +11,16 @@ pdf_name = 'LL Leo Pattern Size A0.pdf'
 
 pdf_out = 'Out_{num}.pdf'
 img_out = 'Out_{num}.png'
+ptrn_imgs = 'pattern_{num}.png'
 desired_layers = [Direction_Layer,Pattern_Layer]
 
-# pdfLayers(pdf_name, pdf_out, desired_layers)
-# pdf2image(desired_layers, pdf_out, img_out)
+pdfLayers(pdf_name, pdf_out, desired_layers)
+pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
+save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, ptrn_imgs)
 copies, lining, main_fabric, fold = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern)
-fold_patterns(fold)
+fold_patterns(fold, ptrn_imgs)
 print(fold)
 # img = cv2.imread(img_out.format(num=Pattern_Layer))
 # copies_img = crop_image(pattern_contours[0], img, 'pattern')
