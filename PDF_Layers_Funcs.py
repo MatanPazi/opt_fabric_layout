@@ -341,32 +341,75 @@ def find_potential_direction_contours(image, ptrn_cntrs):
 
 
 def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
-    # TODO: remove the empty borders.
-    # Consider locating contours and looking for min & max in y and x directions and remove the diff from img height and width.
-    img = cv2.imread(ptrn_image)
+    img0 = cv2.imread(ptrn_image)
 
-    for i in range(len(pattern_contours)):
-        img0 = crop_image(pattern_contours[i], img, 'pattern')    
-        img = img0.copy()
-        img = cv2.GaussianBlur(img, (5, 5), 0)
-        # Taking a matrix of size 7 as the kernel
-        kernel = np.ones((5, 5), np.uint8)
-        img = cv2.erode(img, kernel, iterations=2)
-        img = cv2.dilate(img, kernel, iterations=2)
-        cv2.imwrite('img_test.png',img)
-                
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
+    img_cropped = crop_image(pattern_contours[0], img, 'pattern')    
 
-        # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
-        x_min = 0
-        x_max = img0.shape[1]
-        y_min = 0
-        y_max = img0.shape[0]
-        contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE) 
-        # RETR_EXTERNAL
-        for cnt in contours:
-            print(cnt)
+    # Trying method from here:
+    # https://stackoverflow.com/questions/61239652/detect-dotted-broken-lines-only-in-an-image-using-opencv
+    img=img_cropped.copy()
+    kernel1 = np.ones((3,5),np.uint8)
+    kernel2 = np.ones((9,9),np.uint8)
+
+    imgGray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    cv2.imwrite('img_test.png',imgGray)
+
+    imgBW=cv2.threshold(imgGray, 230, 255, cv2.THRESH_BINARY_INV)[1]
+    cv2.imwrite('img_test.png',imgBW)
+
+    img1=cv2.erode(imgBW, kernel1, iterations=1)
+    cv2.imwrite('img_test.png',img1)
+    img2=cv2.dilate(img1, kernel2, iterations=3)
+    cv2.imwrite('img_test.png',img2)
+    img3 = cv2.bitwise_and(imgBW,img2)
+    cv2.imwrite('img_test.png',img3)
+    img3= cv2.bitwise_not(img3)
+    cv2.imwrite('img_test.png',img3)
+    img4 = cv2.bitwise_and(imgBW,imgBW,mask=img3)
+    cv2.imwrite('img_test.png',img4)
+    imgLines= cv2.HoughLinesP(img4,15,np.pi/180,10, minLineLength = 50, maxLineGap = 15)
+    cv2.imwrite('img_test.png',img4)
+
+    for i in range(len(imgLines)):
+        for x1,y1,x2,y2 in imgLines[i]:
+            cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+
+    
+    
+    
+    # # TODO: remove the empty borders.
+    # # Consider locating contours and looking for min & max in y and x directions and remove the diff from img height and width.
+    # img = cv2.imread(ptrn_image)
+
+    # for i in range(len(pattern_contours)):
+    #     img0 = crop_image(pattern_contours[i], img, 'pattern')    
+    #     img = img0.copy()
+    #     # cv2.imwrite('img_test.png',img)
+    #     # img = cv2.GaussianBlur(img, (7, 7), 0)
+    #     # cv2.imwrite('img_test.png',img)
+    #     # kernel = np.ones((5, 5), np.uint8)
+    #     # img = cv2.erode(img, kernel, iterations=1)
+    #     # cv2.imwrite('img_test.png',img)
+    #     # img = cv2.dilate(img, kernel, iterations=1)
+    #     # cv2.imwrite('img_test.png',img)
+    #     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #     ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY_INV)
+
+    #     cv2.imwrite('img_test.png',thresh)
+    #     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+    #     img = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    #     img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    #     img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    #     cv2.imwrite('img_test.png',img)
+    #     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
+    #     x_min = 0
+    #     x_max = img0.shape[1]
+    #     y_min = 0
+    #     y_max = img0.shape[0]
+    #     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE) 
+    #     # RETR_EXTERNAL
+    #     for cnt in contours:
+    #         print(cnt)
 
 
         # img_cropped = img_cropped[kernel_size : img_cropped.shape[0] - kernel_size, kernel_size: img_cropped.shape[1] - kernel_size]
