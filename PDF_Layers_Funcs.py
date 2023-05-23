@@ -348,40 +348,35 @@ def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
     for i in range(len(pattern_contours)):
         img_cropped = crop_image(pattern_contours[i], ptrn_img, 'pattern')    
         img = img_cropped.copy()
-        # cv2.imwrite('img_test.png',img)
         kernel = np.ones((7, 7), np.uint8)
-        
-        # img = cv2.GaussianBlur(img, (5,5), 0)        
-        # cv2.imwrite('img_test.png',img)
         img = cv2.erode(img, kernel, iterations=2)
-        cv2.imwrite('img_test.png',img)
-        # img = cv2.GaussianBlur(img, (5,5), 0)             
-        cv2.imwrite('img_test.png',img)
         img = cv2.dilate(img, kernel, iterations=2)
-        cv2.imwrite('img_test.png',img)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
-        # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
-        x_min = 0
-        x_max = img.shape[1]
-        y_min = 0
-        y_max = img.shape[0]
-        contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE) 
+        _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)        
+        x_min = img.shape[1]
+        x_max = 0
+        y_min = img.shape[0]
+        y_max = 0
+        contours, _ = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE) 
         first = 0
         for cnt in contours:
             if first == 0:
                 first = 1
                 continue
-            cv2.drawContours(image=img, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-            cv2.imwrite('img_test.png',img)
-            for i in range(len(cnt)):
-                A = np.asarray(cnt)
-                print(A)
-                max_val = A.max(axis=0, keepdims=True)
-                print(max_val)
+            cnt_np = np.asarray(cnt)
+            max_val = cnt_np.max(axis=0, keepdims=False)
+            min_val = cnt_np.min(axis=0, keepdims=False)
+            for j in range(len(cnt)):
+                if max_val[0][0] > x_max:
+                    x_max = int(max_val[0][0])
+                if max_val[0][1] > y_max:
+                    y_max = int(max_val[0][1])
+                if min_val[0][0] < x_min:
+                    x_min = int(min_val[0][0])
+                if min_val[0][1] < y_min:
+                    y_min = int(min_val[0][1])
 
-
-        img_cropped = img_cropped[kernel_size : img_cropped.shape[0] - kernel_size, kernel_size: img_cropped.shape[1] - kernel_size]
+        img_cropped = img_cropped[y_min : y_max, x_min: x_max]
         cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
     
 
