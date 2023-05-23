@@ -132,7 +132,7 @@ def draw_angled_rec(x0, y0, width, height, angle, img, color):
 
 # Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
 # Made slight changes
-def crop_image(cnt, image, type):
+def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     rect = cv2.minAreaRect(cnt)
     shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
     center, size, theta = rect
@@ -176,6 +176,8 @@ def crop_image(cnt, image, type):
         new_height = height // 2
         new_width = width // 2
     else:
+        if not os.path.exists(ptrn_imgs.format(num=ptrn_num)):
+            cv2.imwrite(ptrn_imgs.format(num=ptrn_num),image) 
         if width < height:
             new_height = height // 2
             new_width = math.floor(2 * width)         # To make sure the text is encompassed
@@ -281,7 +283,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     dir_ptrn_flag = 0
     for ptrn_cnt in ptrn_cntrs:
         img_tmp = img.copy()
-        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern')    
+        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0)    
         img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
         # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
@@ -341,13 +343,16 @@ def find_potential_direction_contours(image, ptrn_cntrs):
 
 
 def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
-    # # TODO: remove the empty borders.
-    # # Consider locating contours and looking for min & max in y and x directions and remove the diff from img height and width.
-    ptrn_img = cv2.imread(ptrn_image)
+    # TODO: crop image will need to be changed.
+    # ATM it crops and rotates the pattern so that the minAreaRect is 0 deg.
+    # OR, it crops and rotates the direction contours from the cropped pattern contours
+    ### Need to add the following:
+    ### When the 'direction' method is used, save the rotated image before cropping.
+    # That way, 
 
     for i in range(len(pattern_contours)):
-        img_cropped = crop_image(pattern_contours[i], ptrn_img, 'pattern')    
-        img = img_cropped.copy()
+        img0 = cv2.imread(ptrn_imgs.format(num=i))
+        img = img0.copy()
         kernel = np.ones((7, 7), np.uint8)
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
@@ -382,7 +387,7 @@ def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
 
 
 
-def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
+def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
@@ -403,9 +408,9 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         lining = 0
         main_fabric = 1
         fold = []
-        cropped_img = crop_image(ptrn, img0, 'pattern')    
+        cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
-            dir_cropped_img = crop_image(cnt, cropped_img, 'direction')
+            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', ptrn_counter, ptrn_imgs)
             for i in range (int(360/ang_inc) - 1):
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
