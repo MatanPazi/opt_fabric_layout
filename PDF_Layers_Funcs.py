@@ -142,10 +142,17 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     # Allow only for angles of rotation lower than 90 degrees.
     # To simplify handling.
     if theta == 90:
-        alpha = 0
+        if width > height:
+            alpha = 90
+        else:
+            alpha = 0
         width, height = height, width
     elif theta == 0:
-        alpha = 0        
+        if width < height:
+            alpha = 90        
+            width, height = height, width
+        else:
+            alpha = 0
     else:                    # theta != 0 and theta != 90:
         alpha = 90 - theta
         # if width < height:
@@ -175,16 +182,16 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     if type == 'pattern':
         new_height = height // 2
         new_width = width // 2
-    else:
-        if not os.path.exists(ptrn_imgs.format(num=ptrn_num)):
-            cv2.imwrite(ptrn_imgs.format(num=ptrn_num),image) 
+    elif type == 'direction':
         if width < height:
             new_height = height // 2
-            new_width = math.floor(2 * width)         # To make sure the text is encompassed
+            new_width = math.floor(2 * width)           # To make sure the text is encompassed
         else:
             new_width = width // 2
             new_height = math.floor(2 * height)         # To make sure the text is encompassed
-
+    else:
+        cv2.imwrite(ptrn_imgs.format(num=ptrn_num),image)
+        return
     if (y_new - new_height) < 0:
         y_new = new_height
     elif (y_new + new_height) > image.shape[0]:
@@ -342,17 +349,22 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     return potential_contours, potential_contours_ptrn_index, ptrn_cntrs_new
 
 
-def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
+def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
     # TODO: crop image will need to be changed.
     # ATM it crops and rotates the pattern so that the minAreaRect is 0 deg.
     # OR, it crops and rotates the direction contours from the cropped pattern contours
     ### Need to add the following:
     ### When the 'direction' method is used, save the rotated image before cropping.
     # That way, 
+    img0 = cv2.imread(ptrn_image)
 
     for i in range(len(pattern_contours)):
-        img0 = cv2.imread(ptrn_imgs.format(num=i))
-        img = img0.copy()
+        img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
+        # cv2.imwrite(ptrn_imgs.format(num=i),img1) 
+        cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
+        crop_image(cnt, img1, 'ptrn_save', i, ptrn_imgs)
+        img2 = cv2.imread(ptrn_imgs.format(num=i))
+        img = img2.copy()
         kernel = np.ones((7, 7), np.uint8)
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
@@ -381,7 +393,7 @@ def save_patterns(ptrn_image, pattern_contours, ptrn_imgs):
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
 
-        img_cropped = img_cropped[y_min : y_max, x_min: x_max]
+        img_cropped = img2[y_min : y_max, x_min: x_max]
         cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
     
 
@@ -410,7 +422,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
-            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', ptrn_counter, ptrn_imgs)
+            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0)
             for i in range (int(360/ang_inc) - 1):
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
