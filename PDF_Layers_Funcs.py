@@ -155,16 +155,21 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
             alpha = 0
     else:                    # theta != 0 and theta != 90:
         alpha = 90 - theta
-        # if width < height:
-        width, height = height, width
+        if width < height:
+            width, height = height, width
+        elif type == 'ptrn_save':
+            alpha += 90
 
+    if type == 'ptrn_save':
+        return alpha
+    
     x_old = int(center[0])
     y_old = int(center[1])
     # x_old = int(center[0])
     # y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
     image = imutils.rotate_bound(image, angle = alpha)
-
+    
     alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
@@ -189,9 +194,7 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
         else:
             new_width = width // 2
             new_height = math.floor(2 * height)         # To make sure the text is encompassed
-    else:
-        cv2.imwrite(ptrn_imgs.format(num=ptrn_num),image)
-        return
+
     if (y_new - new_height) < 0:
         y_new = new_height
     elif (y_new + new_height) > image.shape[0]:
@@ -357,14 +360,14 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
     ### When the 'direction' method is used, save the rotated image before cropping.
     # That way, 
     img0 = cv2.imread(ptrn_image)
-
+    rot_ang = []
     for i in range(len(pattern_contours)):
         img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
-        # cv2.imwrite(ptrn_imgs.format(num=i),img1) 
+        cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
-        crop_image(cnt, img1, 'ptrn_save', i, ptrn_imgs)
-        img2 = cv2.imread(ptrn_imgs.format(num=i))
-        img = img2.copy()
+        angle = crop_image(cnt, img1, 'ptrn_save', i, ptrn_imgs)
+        rot_ang.append(angle)
+        img = img1.copy()
         kernel = np.ones((7, 7), np.uint8)
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
@@ -393,8 +396,9 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
 
-        img_cropped = img2[y_min : y_max, x_min: x_max]
+        img_cropped = img1[y_min : y_max, x_min: x_max]
         cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
+    return rot_ang
     
 
 
@@ -456,11 +460,9 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
     return copies_list, lining_list, main_fabric_list, fold_list
 
 
-def fold_patterns(fold_list, pattern_img):
+def fold_patterns(fold_list, pattern_img, rot_ang):
     for i in range(len(fold_list)):
-        if fold_list[i] == 0:
-            continue
-        else:
+        if fold_list[i] != 0:            
             flip_code = -1
             for j in range(len(fold_list[i])):
                 ptrn_img = cv2.imread(pattern_img.format(num = i))
@@ -476,7 +478,7 @@ def fold_patterns(fold_list, pattern_img):
                 theta = rect[2] 
                 if theta == 0:
                     if w > h:
-                        if flip_code == 0:
+                        if flip_code == 0:      # Already folded along that side.
                             break
                         else:
                             flip_code = 0
@@ -524,8 +526,12 @@ def fold_patterns(fold_list, pattern_img):
                         stitched_img = cv2.hconcat([img_flipped, img])
                     else:
                         stitched_img = cv2.hconcat([img, img_flipped])
-                cv2.imwrite('img_test.png',stitched_img)
+
                 cv2.imwrite(pattern_img.format(num = i), stitched_img)
+        # Rotating the pattern images to make sure all the grainlines are the same for all patterns (Where applicable).
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
+        ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
 
 
 
