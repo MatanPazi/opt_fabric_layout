@@ -22,25 +22,18 @@ rotation_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_conto
 copies, lining, main_fabric, fold = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern, ptrn_imgs)
 fold_patterns(fold, ptrn_imgs, rotation_angles)
 print(fold)
-# img = cv2.imread(img_out.format(num=Pattern_Layer))
-# copies_img = crop_image(pattern_contours[0], img, 'pattern')
 
-# img = cv2.imread(img_out.format(num=Direction_Layer))
-# dir_img = crop_image(pattern_contours[0], img, 'direction')
+# TODO:
+# 1. Rescale pattern images.
+# 2. Clean and comment code
+
+# Continue on to optimization part:
+# 3. Generate a 2x2 matrix for each pattern and give a relevant value to each pixel.
+# 4. ...
 
 
-# Need to understand with each potential_dir_contours, what it is:
-    # Grainline.
-    # Cut on fold line.
-    # General remark to be ignored.
-# Use this article to detect what text is written around the arrows:
-    # https://medium.com/pythoneers/text-detection-and-extraction-from-image-with-python-5c0c75a8ff14
-    # Increase bounding box width times 3? 4? to bound the relevant text as well.
-    # Tesseract path is required, use this:
-        # pytesseract.tesseract_cmd=r'/usr/bin/tesseract'
-    # Use the last answer by Roald to crop the relevant image in which the text resides:
-        # https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
-# TODO: Change image scale to A0.
+
+
 
 
 
