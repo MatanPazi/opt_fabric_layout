@@ -15,12 +15,13 @@ ptrn_imgs = 'pattern_{num}.png'
 desired_layers = [Direction_Layer,Pattern_Layer]
 
 pdfLayers(pdf_name, pdf_out, desired_layers)
-pdf2image(desired_layers, pdf_out, img_out)
+size = pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer))
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 rotation_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern, ptrn_imgs)
 copies, lining, main_fabric, fold = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern, ptrn_imgs)
-fold_patterns(fold, ptrn_imgs, rotation_angles)
+fold_patterns(fold, ptrn_imgs, rotation_angles, size)
+gen_array(ptrn_imgs, len(pattern_contours))
 print(fold)
 
 # TODO:

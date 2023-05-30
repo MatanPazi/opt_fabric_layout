@@ -13,6 +13,10 @@ from pytesseract import pytesseract
 import imutils
 import platform
 
+# Global params
+A0_Width  = 841
+A0_Height = 1189    
+
 # Extract relevant PDF layers
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
 # Made relevant changes.
@@ -86,9 +90,6 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
 # Save each pdf as an image
 def pdf2image(desired_layers, pdf_out, img_out):
 
-    A0_Width  = 841
-    A0_Height = 1189
-    img_size = (A0_Width, A0_Height)
     # path = os.path.realpath(os.path.dirname(__file__))
     path = os.getcwd()
 
@@ -100,6 +101,8 @@ def pdf2image(desired_layers, pdf_out, img_out):
         for i in range(len(images)):        
             # Save pages as images in the pdf
             images[i].save(path + '/' + img_out.format(num=desired_layers[j]), 'PNG')
+    img = cv2.imread(img_out.format(num=desired_layers[0]))
+    return img.shape
 
 
 
@@ -215,8 +218,12 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
 def find_pattern_contours(image):
     counter = 0
     img = cv2.imread(image)
+        
     # Taking a matrix of size 7 as the kernel
-    kernel = np.ones((7, 7), np.uint8)
+    kernel_size = int(img.shape[0]*img.shape[1] * 0.0000002 + 0.5)
+    if kernel_size < 1:
+        kernel_size = 1
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # The first parameter is the original image,
     # kernel is the matrix with which image is
     # convolved and third parameter is the number
@@ -226,8 +233,8 @@ def find_pattern_contours(image):
     img = cv2.dilate(img, kernel, iterations=3)
     # img = cv2.erode(img, kernel, iterations=3)
     ## For debugging
-    # image_copy = img.copy()
-    cv2.imwrite('image_copy.png',img)
+    image_copy = img.copy()
+    cv2.imwrite('image_copy.png',image_copy)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
@@ -358,7 +365,6 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
     # OR, it crops and rotates the direction contours from the cropped pattern contours
     ### Need to add the following:
     ### When the 'direction' method is used, save the rotated image before cropping.
-    # That way, 
     img0 = cv2.imread(ptrn_image)
     rot_ang = []
     for i in range(len(pattern_contours)):
@@ -368,7 +374,11 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         angle = crop_image(cnt, img1, 'ptrn_save', i, ptrn_imgs)
         rot_ang.append(angle)
         img = img1.copy()
-        kernel = np.ones((7, 7), np.uint8)
+        
+        kernel_size = int(img0.shape[0]*img0.shape[1] * 0.0000002 + 0.5)
+        if kernel_size < 1:
+            kernel_size = 1
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -395,6 +405,28 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
                     x_min = int(min_val[0][0])
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
+        
+        px_buffer = int(1.5 + img0.shape[1] / A0_Width)
+
+        if img.shape[0] - y_max < px_buffer:
+            y_max = img.shape[0]
+        else:
+            y_max += px_buffer
+
+        if img.shape[1] - x_max < px_buffer:
+            x_max = img.shape[1]
+        else:
+            x_max += px_buffer
+
+        if y_min < px_buffer:
+            y_min = 0
+        else:
+            y_min -= px_buffer
+
+        if x_min < px_buffer:
+            x_min = 0
+        else:
+            x_min -= px_buffer        
 
         img_cropped = img1[y_min : y_max, x_min: x_max]
         cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
@@ -460,7 +492,11 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
     return copies_list, lining_list, main_fabric_list, fold_list
 
 
-def fold_patterns(fold_list, pattern_img, rot_ang):
+def fold_patterns(fold_list, pattern_img, rot_ang, size):
+
+    resize_y = A0_Height / size[0]
+    resize_x = A0_Width / size[1]
+
     for i in range(len(fold_list)):
         if fold_list[i] != 0:            
             flip_code = -1
@@ -531,8 +567,19 @@ def fold_patterns(fold_list, pattern_img, rot_ang):
         # Rotating the pattern images to make sure all the grainlines are the same for all patterns (Where applicable).
         ptrn_img = cv2.imread(pattern_img.format(num = i))
         ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
+        ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
 
+
+
+def gen_array(ptrn_imgs, ptrn_num):
+    for i in range(ptrn_num):
+        img0 = cv2.imread(ptrn_imgs.format(num=i))
+        img = img0.copy()
+        cntr = find_pattern_contours(ptrn_imgs.format(num=i))
+        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        cv2.imwrite('img_test.png',img)
+        print(cntr)
 
 
 # Turn images transparent
