@@ -164,6 +164,11 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
             alpha += 90
 
     if type == 'ptrn_save':
+        if alpha < 1:
+            alpha = 0
+        elif alpha > 89:
+            if (abs(alpha - 90) < 1 and (alpha != 90)):
+                alpha = 90
         return alpha
     
     x_old = int(center[0])
@@ -188,8 +193,8 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     x_new = math.floor(x_temp)
 
     if type == 'pattern':
-        new_height = height // 2
-        new_width = width // 2
+        new_height = int(height / 2)
+        new_width = int(width / 2)
     elif type == 'direction':
         if width < height:
             new_height = height // 2
@@ -222,7 +227,7 @@ def find_pattern_contours(image):
     # Taking a matrix of size 7 as the kernel
     kernel_size = int(img.shape[0]*img.shape[1] * 0.0000002 + 0.5)
     if kernel_size < 1:
-        kernel_size = 2
+        kernel_size = 5
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # The first parameter is the original image,
     # kernel is the matrix with which image is
@@ -234,11 +239,10 @@ def find_pattern_contours(image):
     # img = cv2.erode(img, kernel, iterations=3)
     ## For debugging
     image_copy = img.copy()
-    cv2.imwrite('image_copy.png',image_copy)
+    cv2.imwrite('img_test.png',image_copy)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
-
+    _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)                                            
     good_contours = []
@@ -382,7 +386,8 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)        
+        _, thresh = cv2.threshold(img_gray, 230, 255, cv2.THRESH_BINARY)        
+
         x_min = img.shape[1]
         x_max = 0
         y_min = img.shape[0]
@@ -566,8 +571,13 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
                 cv2.imwrite(pattern_img.format(num = i), stitched_img)
         # Rotating the pattern images to make sure all the grainlines are the same for all patterns (Where applicable).
         ptrn_img = cv2.imread(pattern_img.format(num = i))
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
         ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
-        # ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        kernel = np.ones((7, 7), np.uint8)
+        ptrn_img = cv2.erode(ptrn_img, kernel, iterations=1)
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
 
 
@@ -576,18 +586,20 @@ def gen_array(ptrn_imgs, ptrn_num):
     for i in range(ptrn_num):
         img0 = cv2.imread(ptrn_imgs.format(num=i))
         img = img0.copy()
-        cv2.imwrite('image_copy.png',img)
-        # cntr = find_pattern_contours(ptrn_imgs.format(num=i))
-        kernel = np.ones((3, 3), np.uint8)
-        img = cv2.erode(img, kernel, iterations=5)
-        cv2.imwrite('image_copy.png',img)
-        img = cv2.dilate(img, kernel, iterations=1)
-        # img = cv2.erode(img, kernel, iterations=3)
-        ## For debugging
-        cv2.imwrite('image_copy.png',img)
-
-        # cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        # cv2.imwrite('img_test.png',img)
+        blank = np.zeros((img.shape[0] * 3,img.shape[1] * 3, 3), dtype=np.uint8)
+        blank[:] = 255
+        blank[img.shape[0]:img.shape[0]*2, img.shape[1]:img.shape[1]*2] = img
+        img1 = blank.copy()
+        cv2.imwrite('img_test.png',img1)
+        # kernel = np.ones((3, 3), np.uint8)
+        # img1 = cv2.erode(img1, kernel, iterations=5)
+        # cv2.imwrite('image_copy.png',img1)
+        # img1 = cv2.dilate(img1, kernel, iterations=1)
+        # ## For debugging
+        # cv2.imwrite('image_copy.png',img1)
+        cntr = find_pattern_contours('img_test.png')
+        cv2.drawContours(image=img1, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        cv2.imwrite('img_test.png',img1)
         # print(cntr)
 
 
@@ -611,10 +623,7 @@ def transparent(myimage):
     img.save(myimage, "PNG")
 
 # Merge two images
-def mergeTwoImages(img_out,desired_layers):
-    path = os.getcwd()
-    img1 = Image.open(path + '/' + img_out.format(num=desired_layers[0]))
-    img2 = Image.open(path + '/' + img_out.format(num=desired_layers[1]))
+def mergeTwoImages(img1,img2):
     img1 = img1.convert("RGBA")
     img2 = img2.convert("RGBA")
 

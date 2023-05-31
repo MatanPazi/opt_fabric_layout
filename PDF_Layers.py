@@ -22,7 +22,18 @@ rotation_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_conto
 copies, lining, main_fabric, fold = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern, ptrn_imgs)
 fold_patterns(fold, ptrn_imgs, rotation_angles, size)
 gen_array(ptrn_imgs, len(pattern_contours))
-print(fold)
+
+img1 = cv2.imread(ptrn_imgs.format(num=0))
+img2 = np.zeros((1000,1000,3), dtype=np.uint8)
+img2[:] = 255
+img2[0:img1.shape[0], 0:img1.shape[1]] = img1
+cv2.imwrite('img_test.png',img2)
+
+
+
+
+
+# print(fold)
 
 # TODO:
 # 1. Rescale pattern images.
