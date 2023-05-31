@@ -222,7 +222,7 @@ def find_pattern_contours(image):
     # Taking a matrix of size 7 as the kernel
     kernel_size = int(img.shape[0]*img.shape[1] * 0.0000002 + 0.5)
     if kernel_size < 1:
-        kernel_size = 1
+        kernel_size = 2
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # The first parameter is the original image,
     # kernel is the matrix with which image is
@@ -406,7 +406,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
         
-        px_buffer = int(1.5 + img0.shape[1] / A0_Width)
+        px_buffer = int(1.5 + img0.shape[1] / A0_Width) * 30
 
         if img.shape[0] - y_max < px_buffer:
             y_max = img.shape[0]
@@ -463,7 +463,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
                 text = (pytesseract.image_to_string(img)).lower()
-                print(text[:-1])
+                # print(text[:-1])
                 if 'fold' in text:
                     fold.append(cnt)                
                     break
@@ -478,7 +478,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
             img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()            
-            print(text[:-1])                                    #print the text line by line
+            # print(text[:-1])                                    #print the text line by line
             if 'cut two' in text or 'cut 2' in text:
                 copies = 2
             if 'lining' in text:
@@ -567,7 +567,7 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
         # Rotating the pattern images to make sure all the grainlines are the same for all patterns (Where applicable).
         ptrn_img = cv2.imread(pattern_img.format(num = i))
         ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
-        ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
+        # ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
 
 
@@ -576,10 +576,19 @@ def gen_array(ptrn_imgs, ptrn_num):
     for i in range(ptrn_num):
         img0 = cv2.imread(ptrn_imgs.format(num=i))
         img = img0.copy()
-        cntr = find_pattern_contours(ptrn_imgs.format(num=i))
-        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-        cv2.imwrite('img_test.png',img)
-        print(cntr)
+        cv2.imwrite('image_copy.png',img)
+        # cntr = find_pattern_contours(ptrn_imgs.format(num=i))
+        kernel = np.ones((3, 3), np.uint8)
+        img = cv2.erode(img, kernel, iterations=5)
+        cv2.imwrite('image_copy.png',img)
+        img = cv2.dilate(img, kernel, iterations=1)
+        # img = cv2.erode(img, kernel, iterations=3)
+        ## For debugging
+        cv2.imwrite('image_copy.png',img)
+
+        # cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        # cv2.imwrite('img_test.png',img)
+        # print(cntr)
 
 
 # Turn images transparent
