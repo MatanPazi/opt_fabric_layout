@@ -393,6 +393,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         y_min = img.shape[0]
         y_max = 0
         contours, _ = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE) 
+        
         first = 0
         for cnt in contours:
             if first == 0:
@@ -401,6 +402,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
             cnt_np = np.asarray(cnt)
             max_val = cnt_np.max(axis=0, keepdims=False)
             min_val = cnt_np.min(axis=0, keepdims=False)
+            debug = max_val[0][0]
             for j in range(len(cnt)):
                 if max_val[0][0] > x_max:
                     x_max = int(max_val[0][0])
@@ -593,15 +595,26 @@ def gen_array(ptrn_imgs, ptrn_num):
         img = img0.copy()
         cv2.imwrite('image_copy.png',img)
         cntr = find_pattern_contours('image_copy.png')
+        cntr_np = np.asarray(cntr)
+        max_val = cntr_np.max(axis=1, keepdims=False)
+        min_val = cntr_np.min(axis=1, keepdims=False)
+        x_max = int(max_val[0][0][0])
+        y_max = int(max_val[0][0][1])
+        x_min = int(min_val[0][0][0])
+        y_min = int(min_val[0][0][1])
+        blank = np.zeros(((y_max - y_min),(x_max-x_min), 3), dtype=np.uint8)        
+        blank[:] = 255
+        blank[0:y_max-y_min, 0:x_max-x_min] = img[y_min:y_max, x_min:x_max]
+        cv2.imwrite('image_copy.png',blank)
+        for i in range((cntr[0].shape[0])):
+            cntr[0][i][0][0] -= x_min
+            cntr[0][i][0][1] -= y_min
+        print(cntr)
 
-        # TODO:
-        # Find max/min x and y values and define them as the borders. Subtract the found min values from all the  contour values
-        # And generate a new image which exactly contains the pattern in the now correctlly sized image (A0).
-
-        # (Ignore for now) So maybe finding the min/max values in the save_patterns functions wasn't necessary? Ahh.. maybe it was necessary for the folding..
-        
-        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        cv2.imwrite('image_copy.png',img)
+        # TODO Determine whether each pixel is in or outside the contour.
+                        
+        # cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        # cv2.imwrite('image_copy.png',img)
         # print(cntr)
 
 
