@@ -227,7 +227,7 @@ def find_pattern_contours(image):
     # Taking a matrix of size 7 as the kernel
     kernel_size = int(img.shape[0]*img.shape[1] * 0.0000002 + 0.5)
     if kernel_size < 1:
-        kernel_size = 5
+        kernel_size = 3
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # The first parameter is the original image,
     # kernel is the matrix with which image is
@@ -381,7 +381,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         
         kernel_size = int(img0.shape[0]*img0.shape[1] * 0.0000002 + 0.5)
         if kernel_size < 1:
-            kernel_size = 1
+            kernel_size = 3
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         img = cv2.erode(img, kernel, iterations=2)
         img = cv2.dilate(img, kernel, iterations=2)
@@ -571,12 +571,17 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
                 cv2.imwrite(pattern_img.format(num = i), stitched_img)
         # Rotating the pattern images to make sure all the grainlines are the same for all patterns (Where applicable).
         ptrn_img = cv2.imread(pattern_img.format(num = i))
-        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        blank = np.zeros((ptrn_img.shape[0] * 3,ptrn_img.shape[1] * 3, 3), dtype=np.uint8)
+        blank[:] = 255
+        blank[ptrn_img.shape[0]:ptrn_img.shape[0]*2, ptrn_img.shape[1]:ptrn_img.shape[1]*2] = ptrn_img
+        cv2.imwrite(pattern_img.format(num = i), blank)
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
         ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
-        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)        
         kernel = np.ones((7, 7), np.uint8)
         ptrn_img = cv2.erode(ptrn_img, kernel, iterations=1)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
         ptrn_img = cv2.resize(ptrn_img,(0, 0),fx=resize_x, fy=resize_y, interpolation = cv2.INTER_LINEAR)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
 
@@ -586,20 +591,17 @@ def gen_array(ptrn_imgs, ptrn_num):
     for i in range(ptrn_num):
         img0 = cv2.imread(ptrn_imgs.format(num=i))
         img = img0.copy()
-        blank = np.zeros((img.shape[0] * 3,img.shape[1] * 3, 3), dtype=np.uint8)
-        blank[:] = 255
-        blank[img.shape[0]:img.shape[0]*2, img.shape[1]:img.shape[1]*2] = img
-        img1 = blank.copy()
-        cv2.imwrite('img_test.png',img1)
-        # kernel = np.ones((3, 3), np.uint8)
-        # img1 = cv2.erode(img1, kernel, iterations=5)
-        # cv2.imwrite('image_copy.png',img1)
-        # img1 = cv2.dilate(img1, kernel, iterations=1)
-        # ## For debugging
-        # cv2.imwrite('image_copy.png',img1)
-        cntr = find_pattern_contours('img_test.png')
-        cv2.drawContours(image=img1, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        cv2.imwrite('img_test.png',img1)
+        cv2.imwrite('image_copy.png',img)
+        cntr = find_pattern_contours('image_copy.png')
+
+        # TODO:
+        # Find max/min x and y values and define them as the borders. Subtract the found min values from all the  contour values
+        # And generate a new image which exactly contains the pattern in the now correctlly sized image (A0).
+
+        # (Ignore for now) So maybe finding the min/max values in the save_patterns functions wasn't necessary? Ahh.. maybe it was necessary for the folding..
+        
+        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        cv2.imwrite('image_copy.png',img)
         # print(cntr)
 
 
