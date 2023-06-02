@@ -12,6 +12,7 @@ import math
 from pytesseract import pytesseract
 import imutils
 import platform
+from matplotlib import pyplot as plt
 
 # Global params
 A0_Width  = 841
@@ -595,6 +596,8 @@ def gen_array(ptrn_imgs, ptrn_num):
         img = img0.copy()
         cv2.imwrite('image_copy.png',img)
         cntr = find_pattern_contours('image_copy.png')
+        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+        cv2.imwrite('image_copy.png',img)
         cntr_np = np.asarray(cntr)
         max_val = cntr_np.max(axis=1, keepdims=False)
         min_val = cntr_np.min(axis=1, keepdims=False)
@@ -602,19 +605,37 @@ def gen_array(ptrn_imgs, ptrn_num):
         y_max = int(max_val[0][0][1])
         x_min = int(min_val[0][0][0])
         y_min = int(min_val[0][0][1])
-        blank = np.zeros(((y_max - y_min),(x_max-x_min), 3), dtype=np.uint8)        
+        blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
         blank[:] = 255
-        blank[0:y_max-y_min, 0:x_max-x_min] = img[y_min:y_max, x_min:x_max]
+        blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
+        # img_gray = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
         cv2.imwrite('image_copy.png',blank)
         for i in range((cntr[0].shape[0])):
             cntr[0][i][0][0] -= x_min
             cntr[0][i][0][1] -= y_min
         print(cntr)
-
+        epsilon = 0.001
+        aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
+        shape = (blank.shape[1],blank.shape[0])
+        arr = np.zeros(shape, dtype = np.uint8)
         # TODO Determine whether each pixel is in or outside the contour.
+        for i in range (arr.shape[0]):
+            for j in range (arr.shape[1]):
+                ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
+                if (ptInCntr == 0):
+                    arr.itemset((i,j), 1)
+                elif (ptInCntr < 0):
+                    arr.itemset((i,j), 10)
+                else:
+                    arr.itemset((i,j), 100)
+
+        # plt.gca().invert_yaxis()
+        plt.imshow(arr, interpolation='none')
+        plt.show()   
+        print(arr)
+
                         
-        # cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        # cv2.imwrite('image_copy.png',img)
+
         # print(cntr)
 
 
