@@ -454,6 +454,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
     lining_list = []
     main_fabric_list = []
     fold_list = []
+    grainline_list = []
     dir_cnt_np = np.array(dir_cnt, dtype=object)
     dir_ptrn_cnt_np = np.array(dir_ptrn_cnt, dtype=object)
     ptrn_counter = 0
@@ -475,12 +476,17 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
                 if 'fold' in text:
                     fold.append(cnt)                
                     break
+                if 'grain' in text:
+                    debug = dir_cnt[dir_ptrn_cnt.index(ptrn_counter)]
+                    debug2 = cnt
+                    dir_cnt[dir_ptrn_cnt.index(ptrn_counter)] = cnt                
+                    break
 
         if len(fold) == 0:                         
             fold_list.append(0)
         else:
-            fold_list.append(fold)
-        
+            fold_list.append(fold)                                   
+
         rotated_img = imutils.rotate_bound(cropped_img, angle = (90 - theta))
         for i in range (int(360/ang_inc) - 1):  
             img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
@@ -497,7 +503,8 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
         lining_list.append(lining)
         main_fabric_list.append(main_fabric)
         ptrn_counter += 1
-    return copies_list, lining_list, main_fabric_list, fold_list
+        
+    return copies_list, lining_list, main_fabric_list, fold_list, dir_cnt
 
 
 def fold_patterns(fold_list, pattern_img, rot_ang, size):
