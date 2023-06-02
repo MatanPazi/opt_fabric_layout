@@ -623,15 +623,15 @@ def gen_array(ptrn_imgs, ptrn_num):
             for j in range (arr.shape[1]):
                 ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
                 if (ptInCntr == 0):
-                    arr.itemset((i,j), 1)
+                    arr.itemset((i,j), 255)
                 elif (ptInCntr < 0):
-                    arr.itemset((i,j), 10)
+                    arr.itemset((i,j), 255)
                 else:
                     arr.itemset((i,j), 100)
 
         # plt.gca().invert_yaxis()
-        plt.imshow(arr, interpolation='none')
-        plt.show()   
+        plt.imshow(arr.T, interpolation='none')
+        plt.waitforbuttonpress()   
         print(arr)
 
                         
