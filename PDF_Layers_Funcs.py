@@ -493,7 +493,11 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
-        for cnt in dir_cnt[dir_ptrn_cnt.index(ptrn_counter)]:             
+        indices = [i for i, x in enumerate(dir_ptrn_cnt) if x == ptrn_counter]
+        debug1 = indices[0]
+        debug2 = indices[-1]
+        debug3 = dir_cnt[indices[0]:indices[-1]]
+        for cnt in dir_cnt[indices[0]:indices[-1]]:             
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0)
             for i in range (int(360/ang_inc) - 1):                                      # Rotating 360 deg in 90 deg inc to find all text orientations.
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
@@ -636,13 +640,14 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
 
 
 
-def gen_array(ptrn_imgs, ptrn_num):
+def gen_array(ptrn_imgs, ptrn_num, inv):
     """
     returns an array for the desired pattern with the following values: \n
     X inside and on the pattern contour
     Y outside the pattern contour
     Args:
         ptrn_img - The desired pattern image to generate an array from
+        inv - Whether to rotate the array by 180 or not
         
     Returns:
         2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
@@ -682,7 +687,11 @@ def gen_array(ptrn_imgs, ptrn_num):
                     arr.itemset((i,j), 100)
                 else:   #Outisde contour
                     arr.itemset((i,j), 255)
-
+        if inv:
+            arr = np.rot90(arr, 2)
         # plt.gca().invert_yaxis()
+        plt.imshow(arr.T, interpolation='none')
+        plt.waitforbuttonpress()   
+        arr = np.rot90(arr, 2)
         plt.imshow(arr.T, interpolation='none')
         plt.waitforbuttonpress()   
