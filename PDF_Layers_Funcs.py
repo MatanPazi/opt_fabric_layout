@@ -485,6 +485,8 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     main_fabric_list = []
     fold_list = []
     ptrn_counter = 0
+    dir_cnt_np = np.array(dir_cnt)
+    dir_ptrn_cnt_np = np.array(dir_ptrn_cnt)
     for ptrn in pattern_contours:
         rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent direction contour
         theta = rect[2]
@@ -493,11 +495,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
-        indices = [i for i, x in enumerate(dir_ptrn_cnt) if x == ptrn_counter]
-        debug1 = indices[0]
-        debug2 = indices[-1]
-        debug3 = dir_cnt[indices[0]:indices[-1]]
-        for cnt in dir_cnt[indices[0]:indices[-1]]:             
+        for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0)
             for i in range (int(360/ang_inc) - 1):                                      # Rotating 360 deg in 90 deg inc to find all text orientations.
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
