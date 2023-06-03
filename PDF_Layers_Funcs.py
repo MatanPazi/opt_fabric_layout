@@ -22,6 +22,16 @@ A0_Height = 1189
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
 # Made relevant changes.
 def pdfLayers(pdf_name, pdf_out, desired_layers):
+    """
+    Extract relevant PDF layers  \n
+    Args:
+        pdf_name - the main pdf file, e.g: 'main_pdf.pdf' \n
+        pdf_out - format to save the pdf files, e.g: 'Out_{num}.pdf' \n
+        desired_layers - layers to extract from the main pdf file \n
+ 
+    Returns:
+        void, saves the desired layers as pdf files in pdf_out format.
+    """
     # check if we even have some OCGs
     pdf = pikepdf.open(pdf_name)
 
@@ -87,10 +97,17 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
                     
                 cur_layer += 1
 
-
-# Save each pdf as an image
 def pdf2image(desired_layers, pdf_out, img_out):
-
+    """
+    Save each given pdf as an image  \n
+    Args:
+        desired_layers - pdf numbers to look for, e.g 'Out_0.pdf' \n        
+        pdf_out - pdf file format to read, e.g: 'Out_{num}.pdf' \n
+        img_out - format to save the image files, e.g: 'Out_{num}.png'
+        
+    Returns:
+        one of the image's shape, img.shape, (y,x), (All the image's shapes are identical).
+    """
     # path = os.path.realpath(os.path.dirname(__file__))
     path = os.getcwd()
 
@@ -221,73 +238,52 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
 
 
 # Find the pattern contours
-def find_pattern_contours(image):
+def find_pattern_contours(image, resized):
+    """
+    Finds the pattern contours  \n
+    Args:
+        image - pattern contour image format to read \n        
+        resized - bool, whether the image was resized to A0 or not, determines kernel size.
+        
+    Returns:
+        The detected pattern contours
+    """
     counter = 0
     img = cv2.imread(image)
         
-    # Taking a matrix of size 7 as the kernel
-    kernel_size = int(img.shape[0]*img.shape[1] * 0.0000002 + 0.5)
-    if kernel_size < 1:
+    if resized:
         kernel_size = 3
+    else:
+        kernel_size = 7
+
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # The first parameter is the original image,
-    # kernel is the matrix with which image is
+    # kernel is the matrix with which the image is
     # convolved and third parameter is the number
     # of iterations, which will determine how much
     # you want to erode/dilate a given image.
     img = cv2.erode(img, kernel, iterations=6)
     img = cv2.dilate(img, kernel, iterations=3)
-    # img = cv2.erode(img, kernel, iterations=3)
     ## For debugging
-    image_copy = img.copy()
-    cv2.imwrite('img_test.png',image_copy)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)                                            
     good_contours = []
-    ## Needed for old method. Using heir now.
-    # shape = (len(contours), 1)              # len(contours) rows and 1 columns
-    # x = np.zeros(shape).astype(int)
-    # y = np.zeros(shape).astype(int)
-    # w = np.zeros(shape).astype(int)
-    # h = np.zeros(shape).astype(int)
-
     j = 0
     for cnt in contours:
         if counter == 0:                    # First contour encompasses entire image
             counter += 1
             continue
-        ## Needed for old method. Using heir now.
-        # x[j],y[j],w[j],h[j] = cv2.boundingRect(cnt)
+
         good_contours.append(cnt)
         heir = hierarchy[0][counter][3]     # [next, previous, first child, parent].
                                             # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure
         if heir != 0:                       # If heir is 0, means it's the outer most contour, which is what I'm interested in.
-            ## Needed for old method. Using heir now.
-            # x = np.delete(x, j, 0)
-            # y = np.delete(y, j, 0)
-            # w = np.delete(w, j, 0)
-            # h = np.delete(h, j, 0)
             good_contours.pop(j)
         else:             
             j += 1
-            # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-            # cv2.imwrite('image_copy.png',image_copy)
-        ## Needed for old method. Using heir now (See above).
-        # for i in range(j+1): # Check if this contour is inside another contour
-        #     if ((((x[j] + w[j]) < (x[i] + w[i])) and x[j] > x[i]) and
-        #         (((y[j] + h[j]) < (y[i] + h[i])) and y[j] > y[i]) or
-        #         (w[j] < min_pixels and h[j] < min_pixels)):
-        #         x = np.delete(x, j, 0)
-        #         y = np.delete(y, j, 0)
-        #         w = np.delete(w, j, 0)
-        #         h = np.delete(h, j, 0)
-        #         good_contours.pop(j)
-        #         break
-        #     elif i == j:
-        #         j += 1
         counter += 1
     ## For debugging
     # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
@@ -297,6 +293,17 @@ def find_pattern_contours(image):
 
 # Find grainline contours
 def find_potential_direction_contours(image, ptrn_cntrs):
+    """
+    Finds direction contours and the pattern contours which contain direction contours inside them.  \n
+    Args:
+        image - direction contour image format to read \n        
+        ptrn_cntrs - The detected pattern contours inside which to look for the direction contours
+        
+    Returns:
+        potential_contours - Potential direction contours \n
+        potential_contours_ptrn_index - direction contour pattern index, e.g 0 means relating to pattern in index 0. \n
+        ptrn_cntrs_new - The pattern contours which contain direction contours inside them. \n
+    """
     img = cv2.imread(image)
     ptrn_cnt_counter = 0
     potential_contours = []
@@ -365,11 +372,18 @@ def find_potential_direction_contours(image, ptrn_cntrs):
 
 
 def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
-    # TODO: crop image will need to be changed.
-    # ATM it crops and rotates the pattern so that the minAreaRect is 0 deg.
-    # OR, it crops and rotates the direction contours from the cropped pattern contours
-    ### Need to add the following:
-    ### When the 'direction' method is used, save the rotated image before cropping.
+    """
+    Crops and saves the pattern contours images before being folded \n
+    Args:
+        ptrn_image - Main pattern image format to open
+        pattern_contours - the pattern contours
+        dir_cnt - the direction contours
+        dir_ptrn_cnt - the direction contour pattern indices
+        ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
+        
+    Returns:
+        rot_ang - A list of the rotation angles needed for each pattern to get the first (Arbitrary) direction contour horizontal.
+    """
     img0 = cv2.imread(ptrn_image)
     rot_ang = []
     for i in range(len(pattern_contours)):
@@ -414,7 +428,8 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
         
-        px_buffer = int(1.5 + img0.shape[1] / A0_Width) * 30
+        # px_buffer = int(1.5 + img0.shape[1] / A0_Width) * 30
+        px_buffer = 0
 
         if img.shape[0] - y_max < px_buffer:
             y_max = img.shape[0]
@@ -443,20 +458,32 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
 
 
 
-def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
+def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
+    """
+    Detects relevant text: fold, grainline, main fabric, lining, # of copies \n
+    Args:
+        image - direction layer image format
+        pattern_contours - the pattern contours
+        dir_cnt - the direction contours
+        dir_ptrn_cnt - the direction contour pattern indices
+        
+    Returns:
+        copies_list - list of copies per pattern \n
+        lining_list -  list of whether the pattern should be on lining per pattern \n
+        main_fabric_list -  list of whether the pattern should be on main fabric per pattern \n
+        fold_list -  list of fold directions per pattern \n
+        dir_cnt - updated direction contour list per pattern. If grainline appears, put it first. \n
+    """
     if platform.system() == 'Windows':
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
         pytesseract.tesseract_cmd=r'/usr/bin/tesseract'    
     img0 = cv2.imread(image)
-    ang_inc = 90      #Potential TODO: Rotate pattern contour according to grainling angle and then rotate by 90 degrees.
+    ang_inc = 90
     copies_list = []
     lining_list = []
     main_fabric_list = []
     fold_list = []
-    grainline_list = []
-    dir_cnt_np = np.array(dir_cnt, dtype=object)
-    dir_ptrn_cnt_np = np.array(dir_ptrn_cnt, dtype=object)
     ptrn_counter = 0
     for ptrn in pattern_contours:
         rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent direction contour
@@ -466,19 +493,18 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
         main_fabric = 1
         fold = []
         cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
-        for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:             
+        for cnt in dir_cnt[dir_ptrn_cnt.index(ptrn_counter)]:             
             dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0)
-            for i in range (int(360/ang_inc) - 1):
+            for i in range (int(360/ang_inc) - 1):                                      # Rotating 360 deg in 90 deg inc to find all text orientations.
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
                 text = (pytesseract.image_to_string(img)).lower()
+                ## For debugging
                 # print(text[:-1])
                 if 'fold' in text:
                     fold.append(cnt)                
                     break
                 if 'grain' in text:
-                    debug = dir_cnt[dir_ptrn_cnt.index(ptrn_counter)]
-                    debug2 = cnt
                     dir_cnt[dir_ptrn_cnt.index(ptrn_counter)] = cnt                
                     break
 
@@ -492,6 +518,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
             img = imutils.rotate_bound(rotated_img, angle = (i * ang_inc))
             cv2.imwrite('img_test.png',img)
             text = (pytesseract.image_to_string(img)).lower()            
+            ## For debugging
             # print(text[:-1])                                    #print the text line by line
             if 'cut two' in text or 'cut 2' in text:
                 copies = 2
@@ -508,7 +535,19 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
 
 
 def fold_patterns(fold_list, pattern_img, rot_ang, size):
-
+    """
+    Folds the pattern images based on the given fold list \n
+    copies images to larger blank images for easier later manipulation \n
+    and saves back to pattern_img format \n
+    Args:
+        fold_list - list of fold direction contours per pattern \n
+        pattern_img - pattern images format \n
+        rot_ang - rotation angles needed to make sure the grainlines are horizontal \n
+        size - size of the original images to know how much to resize to fit to an A0 size
+        
+    Returns:
+        void
+    """
     resize_y = A0_Height / size[0]
     resize_x = A0_Width / size[1]
 
@@ -598,11 +637,21 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
 
 
 def gen_array(ptrn_imgs, ptrn_num):
+    """
+    returns an array for the desired pattern with the following values: \n
+    X inside and on the pattern contour
+    Y outside the pattern contour
+    Args:
+        ptrn_img - The desired pattern image to generate an array from
+        
+    Returns:
+        2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
+    """    
     for i in range(ptrn_num):
         img0 = cv2.imread(ptrn_imgs.format(num=i))
         img = img0.copy()
         cv2.imwrite('image_copy.png',img)
-        cntr = find_pattern_contours('image_copy.png')
+        cntr = find_pattern_contours('image_copy.png', True)
         cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
         cv2.imwrite('image_copy.png',img)
         cntr_np = np.asarray(cntr)
@@ -624,86 +673,16 @@ def gen_array(ptrn_imgs, ptrn_num):
         epsilon = 0.001
         aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
         shape = (blank.shape[1],blank.shape[0])
-        arr = np.zeros(shape, dtype = np.uint8)
-        # TODO Determine whether each pixel is in or outside the contour.
+        arr = np.zeros(shape, dtype = np.int16)
+        #Determine whether each pixel is in or outside the contour and give the relevant value.
         for i in range (arr.shape[0]):
             for j in range (arr.shape[1]):
                 ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
-                if (ptInCntr == 0):
-                    arr.itemset((i,j), 255)
-                elif (ptInCntr < 0):
-                    arr.itemset((i,j), 255)
-                else:
+                if (ptInCntr >= 0): #Inside or on contour
                     arr.itemset((i,j), 100)
+                else:   #Outisde contour
+                    arr.itemset((i,j), 255)
 
         # plt.gca().invert_yaxis()
         plt.imshow(arr.T, interpolation='none')
         plt.waitforbuttonpress()   
-        print(arr)
-
-                        
-
-        # print(cntr)
-
-
-# Turn images transparent
-def transparent(myimage):
-
-    Th = 50
-    img = Image.open(myimage)
-    img = img.convert("RGBA")
-
-    pixdata = img.load()
-
-    width, height = img.size
-    for y in range(height):
-        for x in range(width):
-            (R,G,B,A) = pixdata[x, y]
-            # if pixdata[x, y] == (255, 255, 255, 255):
-            if R > Th and G > Th and B > Th and A > Th:
-                pixdata[x, y] = (255, 255, 255, 0)
-
-    img.save(myimage, "PNG")
-
-# Merge two images
-def mergeTwoImages(img1,img2):
-    img1 = img1.convert("RGBA")
-    img2 = img2.convert("RGBA")
-
-    final = Image.new("RGBA", img1.size)
-    final = Image.alpha_composite(final, img1)
-    final = Image.alpha_composite(final, img2)
-
-    final.save("final.png","PNG")
-
-
-# Turn images transparent
-def white_bg_and_invert(myimage):
-
-    Th = 50
-    img = Image.open(myimage)
-    img = img.convert("RGBA")
-
-    pixdata = img.load()
-
-    width, height = img.size
-    for y in range(height):
-        for x in range(width):
-            (R,G,B,A) = pixdata[x, y]
-            # if pixdata[x, y] == (255, 255, 255, 255):
-            if A < Th:
-                pixdata[x, y] = (255, 255, 255, 255)
-    
-    image = Image.open(myimage)
-    r,g,b,a = image.split()
-    rgb_image = Image.merge('RGB', (r,g,b))
-
-    inverted_image = PIL.ImageOps.invert(rgb_image)
-
-    r2,g2,b2 = inverted_image.split()
-
-    final_transparent_image = Image.merge('RGBA', (r2,g2,b2,a))
-
-    final_transparent_image.save(myimage)
-
-
