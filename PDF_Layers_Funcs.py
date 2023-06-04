@@ -717,3 +717,16 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
     return main_array
+
+
+def opt_place(main_array, num_of_ptrns, ptrn_imgs):
+    """
+    ???
+    Args:
+        Fabric_width - Fabric width in mm (pixels) \n
+        num_of_ptrns - Number of patterns
+        ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
+        
+    Returns:
+        2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
+    """   
