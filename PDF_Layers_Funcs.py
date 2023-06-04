@@ -265,7 +265,7 @@ def find_pattern_contours(image, resized):
     img = cv2.erode(img, kernel, iterations=6)
     img = cv2.dilate(img, kernel, iterations=3)
     ## For debugging
-
+    # image_copy = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
@@ -285,7 +285,7 @@ def find_pattern_contours(image, resized):
         else:             
             j += 1
         counter += 1
-    ## For debugging
+    # For debugging
     # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
     # cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
@@ -414,7 +414,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
             if first == 0:
                 first = 1
                 continue
-            cnt_np = np.asarray(cnt)
+            cnt_np = np.asarray(cnt, dtype = object)
             max_val = cnt_np.max(axis=0, keepdims=False)
             min_val = cnt_np.min(axis=0, keepdims=False)
             debug = max_val[0][0]
@@ -485,8 +485,8 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     main_fabric_list = []
     fold_list = []
     ptrn_counter = 0
-    dir_cnt_np = np.array(dir_cnt)
-    dir_ptrn_cnt_np = np.array(dir_ptrn_cnt)
+    dir_cnt_np = np.asarray(dir_cnt, dtype = object)
+    dir_ptrn_cnt_np = np.asarray(dir_ptrn_cnt, dtype = object)
     for ptrn in pattern_contours:
         rect = cv2.minAreaRect(dir_cnt[dir_ptrn_cnt.index(ptrn_counter)])   #Find the first relevent direction contour
         theta = rect[2]
@@ -657,7 +657,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
         cntr = find_pattern_contours('image_copy.png', True)
         cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
         cv2.imwrite('image_copy.png',img)
-        cntr_np = np.asarray(cntr)
+        cntr_np = np.asarray(cntr, dtype = object)
         max_val = cntr_np.max(axis=1, keepdims=False)
         min_val = cntr_np.min(axis=1, keepdims=False)
         x_max = int(max_val[0][0][0])
@@ -667,12 +667,9 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
         blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
         blank[:] = 255
         blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
-        # img_gray = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite('image_copy.png',blank)
         for i in range((cntr[0].shape[0])):
             cntr[0][i][0][0] -= x_min
             cntr[0][i][0][1] -= y_min
-        print(cntr)
         epsilon = 0.001
         aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
         shape = (blank.shape[1],blank.shape[0])
@@ -687,9 +684,21 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
                     arr.itemset((i,j), 255)
         if inv:
             arr = np.rot90(arr, 2)
-        # plt.gca().invert_yaxis()
-        plt.imshow(arr.T, interpolation='none')
-        plt.waitforbuttonpress()   
-        arr = np.rot90(arr, 2)
-        plt.imshow(arr.T, interpolation='none')
-        plt.waitforbuttonpress()   
+        ## For debugging
+        # plt.imshow(arr.T, interpolation='none')
+        # plt.waitforbuttonpress()   
+        # arr = np.rot90(arr, 2)
+        # plt.imshow(arr.T, interpolation='none')
+        # plt.waitforbuttonpress()   
+        return arr
+
+def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
+    len = 0
+    for i in range(num_of_ptrns):
+        arr = gen_array(ptrn_imgs, num_of_ptrns, False)
+        len += arr.shape[1]
+    shape = (Fabric_width, len)
+    main_array = np.zeros(shape)
+    for i in range(Fabric_width):
+        for j in range(len):
+            main_array[i,j] = 1 + j/len
