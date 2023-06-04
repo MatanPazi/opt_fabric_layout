@@ -650,55 +650,70 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     Returns:
         2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
     """    
-    for i in range(ptrn_num):
-        img0 = cv2.imread(ptrn_imgs.format(num=i))
-        img = img0.copy()
-        cv2.imwrite('image_copy.png',img)
-        cntr = find_pattern_contours('image_copy.png', True)
-        cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-        cv2.imwrite('image_copy.png',img)
-        cntr_np = np.asarray(cntr, dtype = object)
-        max_val = cntr_np.max(axis=1, keepdims=False)
-        min_val = cntr_np.min(axis=1, keepdims=False)
-        x_max = int(max_val[0][0][0])
-        y_max = int(max_val[0][0][1])
-        x_min = int(min_val[0][0][0])
-        y_min = int(min_val[0][0][1])
-        blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
-        blank[:] = 255
-        blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
-        for i in range((cntr[0].shape[0])):
-            cntr[0][i][0][0] -= x_min
-            cntr[0][i][0][1] -= y_min
-        epsilon = 0.001
-        aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
-        shape = (blank.shape[1],blank.shape[0])
-        arr = np.zeros(shape, dtype = np.int16)
-        #Determine whether each pixel is in or outside the contour and give the relevant value.
-        for i in range (arr.shape[0]):
-            for j in range (arr.shape[1]):
-                ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
-                if (ptInCntr >= 0): #Inside or on contour
-                    arr.itemset((i,j), 100)
-                else:   #Outisde contour
-                    arr.itemset((i,j), 255)
-        if inv:
-            arr = np.rot90(arr, 2)
-        ## For debugging
-        # plt.imshow(arr.T, interpolation='none')
-        # plt.waitforbuttonpress()   
-        # arr = np.rot90(arr, 2)
-        # plt.imshow(arr.T, interpolation='none')
-        # plt.waitforbuttonpress()   
-        return arr
+    img0 = cv2.imread(ptrn_imgs.format(num=ptrn_num))
+    img = img0.copy()
+    cv2.imwrite('image_copy.png',img)
+    cntr = find_pattern_contours('image_copy.png', True)
+    cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+    cv2.imwrite('image_copy.png',img)
+    cntr_np = np.asarray(cntr, dtype = object)
+    max_val = cntr_np.max(axis=1, keepdims=False)
+    min_val = cntr_np.min(axis=1, keepdims=False)
+    x_max = int(max_val[0][0][0])
+    y_max = int(max_val[0][0][1])
+    x_min = int(min_val[0][0][0])
+    y_min = int(min_val[0][0][1])
+    blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
+    blank[:] = 255
+    blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
+    for i in range((cntr[0].shape[0])):
+        cntr[0][i][0][0] -= x_min
+        cntr[0][i][0][1] -= y_min
+    epsilon = 0.001
+    aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
+    shape = (blank.shape[1],blank.shape[0])
+    arr = np.zeros(shape, dtype = np.int16)
+    #Determine whether each pixel is in or outside the contour and give the relevant value.
+    for i in range (arr.shape[0]):
+        for j in range (arr.shape[1]):
+            ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
+            if (ptInCntr >= 0): #Inside or on contour
+                arr.itemset((i,j), 0)
+            else:   #Outisde contour
+                arr.itemset((i,j), 1)
+    if inv:
+        arr = np.rot90(arr, 2)
+    ## For debugging
+    # plt.imshow(arr.T, interpolation='none')
+    # plt.waitforbuttonpress()   
+    # arr = np.rot90(arr, 2)
+    # plt.imshow(arr.T, interpolation='none')
+    # plt.waitforbuttonpress()   
+    return arr
 
 def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
+    """
+    Returns an initialized main fabric array. \n
+    leftmost column values are 1, rightmost column values are 2 \n
+    The values increase linearly based on column #. \n
+    The # of columns are a conservative estimate based on sum of pattern length. \n
+    Args:
+        Fabric_width - Fabric width in mm (pixels) \n
+        num_of_ptrns - Number of patterns
+        ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
+        
+    Returns:
+        2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
+    """    
     len = 0
     for i in range(num_of_ptrns):
-        arr = gen_array(ptrn_imgs, num_of_ptrns, False)
-        len += arr.shape[1]
+        arr = gen_array(ptrn_imgs, i, False)
+        len += arr.shape[0]
     shape = (Fabric_width, len)
     main_array = np.zeros(shape)
     for i in range(Fabric_width):
         for j in range(len):
             main_array[i,j] = 1 + j/len
+    plt.imshow(main_array, interpolation='none')
+    plt.waitforbuttonpress() 
+    return main_array
