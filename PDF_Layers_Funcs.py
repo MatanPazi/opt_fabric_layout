@@ -13,6 +13,7 @@ from pytesseract import pytesseract
 import imutils
 import platform
 from matplotlib import pyplot as plt
+import random
 
 # Global params
 A0_Width  = 841
@@ -713,7 +714,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     main_array = np.zeros(shape)
     for i in range(Fabric_width):
         for j in range(len):
-            main_array[i,j] = 1 + j/len
+            main_array[i,j] = 2 + i/Fabric_width - j/len
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
     return main_array
@@ -723,10 +724,27 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
     """
     ???
     Args:
-        Fabric_width - Fabric width in mm (pixels) \n
-        num_of_ptrns - Number of patterns
-        ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
+        main_array - Initialized main fabric array \n
+        num_of_ptrns - Number of patterns \n
+        ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'. \n
         
     Returns:
-        2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
+        void
     """   
+    for i in range(num_of_ptrns):
+        arr = gen_array(ptrn_imgs, i, False)
+        x = random.randint(0, main_array.shape[0] - arr.shape[0])
+        y = random.randint(0, main_array.shape[1] - arr.shape[1])
+        area_replaced = arr.size / main_array.size
+        plt.imshow(main_array, interpolation='none')
+        plt.waitforbuttonpress() 
+        print(cost_func(main_array, area_replaced))
+        main_array[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+        plt.imshow(main_array, interpolation='none')
+        plt.waitforbuttonpress() 
+        print(cost_func(main_array, area_replaced))
+
+
+def cost_func(main_array, area_replaced):
+    cost = main_array.sum() * area_replaced
+    return cost
