@@ -14,6 +14,7 @@ import imutils
 import platform
 from matplotlib import pyplot as plt
 import random
+from scipy import optimize
 
 # Global params
 A0_Width  = 841
@@ -735,16 +736,29 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
         arr = gen_array(ptrn_imgs, i, False)
         x = random.randint(0, main_array.shape[0] - arr.shape[0])
         y = random.randint(0, main_array.shape[1] - arr.shape[1])
-        area_replaced = arr.size / main_array.size
-        plt.imshow(main_array, interpolation='none')
-        plt.waitforbuttonpress() 
-        print(cost_func(main_array, area_replaced))
+        # plt.imshow(main_array, interpolation='none')
+        # plt.waitforbuttonpress() 
+        pos = [x,y]
+        res = optimize.minimize(cost_func, pos, args=(main_array, arr), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
+        print(res.fun)
         main_array[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
-        plt.imshow(main_array, interpolation='none')
-        plt.waitforbuttonpress() 
-        print(cost_func(main_array, area_replaced))
+        # plt.imshow(main_array, interpolation='none')
+        # plt.waitforbuttonpress() 
 
 
-def cost_func(main_array, area_replaced):
-    cost = main_array.sum() * area_replaced
+def cost_func(x, main_array, arr):
+    x_pos = int(x[0])
+    y_pos = int(x[1])
+    area_replaced = arr.size / main_array.size
+    main_arr_copy = main_array.copy()
+    main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]] = arr
+    cost = main_arr_copy.sum() * area_replaced
+    if x_pos < 0:
+        cost += 1 - x_pos
+    if x_pos > (main_array.shape[0] - arr.shape[0]):
+        cost += x_pos -(main_array.shape[0] - arr.shape[0])
+    if y_pos < 0:
+        cost += 1 - y_pos
+    if y_pos > (main_array.shape[1] - arr.shape[1]):
+        cost += y_pos -(main_array.shape[1] - arr.shape[1])
     return cost
