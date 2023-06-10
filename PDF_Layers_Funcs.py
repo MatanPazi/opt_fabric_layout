@@ -691,7 +691,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     # arr = np.rot90(arr, 2)
     # plt.imshow(arr.T, interpolation='none')
     # plt.waitforbuttonpress()   
-    return arr
+    return arr.T
 
 def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     """
@@ -730,45 +730,62 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
     Returns:
         void
     """   
+    init_main_arr_sum = main_array.sum()
+    min = 1        
     for i in range(num_of_ptrns):
+        main_arr_copy = main_array.copy()
         arr = gen_array(ptrn_imgs, i, False)
         x = random.randint(0, main_array.shape[0] - arr.shape[0])
-        y = random.randint(0, main_array.shape[1] - arr.shape[1])
-        init_main_arr_sum = main_array.sum()
-
-        resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
-        resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
-        print(resx.fun)
+        y = random.randint(0, main_array.shape[1] - arr.shape[1])        
+        optsx = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
+        optsy = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
+        resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=optsx)
+        x = int(resx.x)
+        resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', options=optsy)
+        y = int(resy.x)
         print(resy.fun)
-        main_array[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+        if min > resy.fun:
+            min = resy.fun
+            x_min = int(resx.x)
+            y_min = int(resy.x)
+            arr_min = arr.copy()
+        main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+        plt.imshow(main_arr_copy, interpolation='none')
+        plt.waitforbuttonpress() 
+
+    main_array[x_min:x_min+arr.shape[0], y_min:y_min+arr.shape[1]] = arr_min
+    plt.imshow(main_array, interpolation='none')
+    plt.waitforbuttonpress() 
+
+    # TODO: 
+    # 1. Add the same outer for loop
+    # 2. Prevent pattern collisions
+        # Consider combining existing patterns to 1 contour and checking if random point is inside contour or not.
 
 
 def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
     if x_flag:
-        x_pos = pos1
-        y_pos = pos2
+        x_pos = int(pos1)
+        y_pos = int(pos2)
+        if x_pos < 0:
+            cost = 1 - x_pos
+            return cost
+        if x_pos > (main_array.shape[0] - arr.shape[0]):
+            cost = x_pos -(main_array.shape[0] - arr.shape[0])
+            return cost
     else:
-        x_pos = pos1
-        y_pos = pos2
-    x_pos = int(x[0])
-    y_pos = int(x[1])
-    if x_pos < 0:
-        cost = 1 - x_pos
-        return cost
-    if x_pos > (main_array.shape[0] - arr.shape[0]):
-        cost = x_pos -(main_array.shape[0] - arr.shape[0])
-        return cost
-    if y_pos < 0:
-        cost = 1 - y_pos
-        return cost
-    if y_pos > (main_array.shape[1] - arr.shape[1]):
-        cost = y_pos -(main_array.shape[1] - arr.shape[1])    
-        return cost
+        x_pos = int(pos2)
+        y_pos = int(pos1)
+        if y_pos < 0:
+            cost = 1 - y_pos
+            return cost
+        if y_pos > (main_array.shape[1] - arr.shape[1]):
+            cost = y_pos -(main_array.shape[1] - arr.shape[1])    
+            return cost
+
     area_replaced = arr.size / main_array.size
     main_arr_copy = main_array.copy()
     main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]] = arr
     cost = main_arr_copy.sum() * area_replaced / init_main_arr_sum;
     print(cost)
-    plt.imshow(main_arr_copy, interpolation='none')
-    plt.waitforbuttonpress() 
     return cost
