@@ -716,8 +716,6 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     for i in range(Fabric_width):
         for j in range(len):
             main_array[i,j] = 2 + i/Fabric_width - j/len
-    plt.imshow(main_array, interpolation='none')
-    plt.waitforbuttonpress() 
     return main_array
 
 
@@ -736,29 +734,41 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
         arr = gen_array(ptrn_imgs, i, False)
         x = random.randint(0, main_array.shape[0] - arr.shape[0])
         y = random.randint(0, main_array.shape[1] - arr.shape[1])
-        # plt.imshow(main_array, interpolation='none')
-        # plt.waitforbuttonpress() 
-        pos = [x,y]
-        res = optimize.minimize(cost_func, pos, args=(main_array, arr), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
-        print(res.fun)
+        init_main_arr_sum = main_array.sum()
+
+        resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
+        resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', tol=0.01, options={'maxiter': 20, 'disp': True})
+        print(resx.fun)
+        print(resy.fun)
         main_array[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
-        # plt.imshow(main_array, interpolation='none')
-        # plt.waitforbuttonpress() 
 
 
-def cost_func(x, main_array, arr):
+def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
+    if x_flag:
+        x_pos = pos1
+        y_pos = pos2
+    else:
+        x_pos = pos1
+        y_pos = pos2
     x_pos = int(x[0])
     y_pos = int(x[1])
+    if x_pos < 0:
+        cost = 1 - x_pos
+        return cost
+    if x_pos > (main_array.shape[0] - arr.shape[0]):
+        cost = x_pos -(main_array.shape[0] - arr.shape[0])
+        return cost
+    if y_pos < 0:
+        cost = 1 - y_pos
+        return cost
+    if y_pos > (main_array.shape[1] - arr.shape[1]):
+        cost = y_pos -(main_array.shape[1] - arr.shape[1])    
+        return cost
     area_replaced = arr.size / main_array.size
     main_arr_copy = main_array.copy()
     main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]] = arr
-    cost = main_arr_copy.sum() * area_replaced
-    if x_pos < 0:
-        cost += 1 - x_pos
-    if x_pos > (main_array.shape[0] - arr.shape[0]):
-        cost += x_pos -(main_array.shape[0] - arr.shape[0])
-    if y_pos < 0:
-        cost += 1 - y_pos
-    if y_pos > (main_array.shape[1] - arr.shape[1]):
-        cost += y_pos -(main_array.shape[1] - arr.shape[1])
+    cost = main_arr_copy.sum() * area_replaced / init_main_arr_sum;
+    print(cost)
+    plt.imshow(main_arr_copy, interpolation='none')
+    plt.waitforbuttonpress() 
     return cost
