@@ -731,31 +731,37 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
         void
     """   
     init_main_arr_sum = main_array.sum()
-    min = 1        
+    min = 1
+    index_min = []
     for i in range(num_of_ptrns):
-        main_arr_copy = main_array.copy()
-        arr = gen_array(ptrn_imgs, i, False)
-        x = random.randint(0, main_array.shape[0] - arr.shape[0])
-        y = random.randint(0, main_array.shape[1] - arr.shape[1])        
-        optsx = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
-        optsy = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
-        resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=optsx)
-        x = int(resx.x)
-        resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', options=optsy)
-        y = int(resy.x)
-        print(resy.fun)
-        if min > resy.fun:
-            min = resy.fun
-            x_min = int(resx.x)
-            y_min = int(resy.x)
-            arr_min = arr.copy()
-        main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
-        plt.imshow(main_arr_copy, interpolation='none')
+        min = 1
+        for j in range(num_of_ptrns):
+            if j in index_min:
+                continue
+            main_arr_copy = main_array.copy()
+            arr = gen_array(ptrn_imgs, j, False)
+            x = random.randint(0, main_array.shape[0] - arr.shape[0])
+            y = random.randint(0, main_array.shape[1] - arr.shape[1])        
+            optsx = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
+            optsy = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
+            resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=optsx)
+            x = int(resx.x)
+            resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', options=optsy)
+            y = int(resy.x)
+            print(resy.fun)
+            if min > resy.fun:
+                min = resy.fun
+                x_min = int(resx.x)
+                y_min = int(resy.x)
+                arr_min = arr.copy()
+                index_min_val = j
+            main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+            # plt.imshow(main_arr_copy, interpolation='none')
+            # plt.waitforbuttonpress() 
+        index_min.append(index_min_val)
+        main_array[x_min:x_min+arr_min.shape[0], y_min:y_min+arr_min.shape[1]] = arr_min
+        plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress() 
-
-    main_array[x_min:x_min+arr.shape[0], y_min:y_min+arr.shape[1]] = arr_min
-    plt.imshow(main_array, interpolation='none')
-    plt.waitforbuttonpress() 
 
     # TODO: 
     # 1. Add the same outer for loop
