@@ -715,7 +715,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     main_array = np.zeros(shape)
     for i in range(Fabric_width):
         for j in range(len):
-            main_array[i,j] = 2 + i/Fabric_width - j/len
+            main_array[i,j] = 3 + i/Fabric_width - 2*math.log(j+1) / math.log(len)
     return main_array
 
 
