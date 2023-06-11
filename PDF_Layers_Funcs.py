@@ -715,7 +715,9 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     main_array = np.zeros(shape)
     for i in range(Fabric_width):
         for j in range(len):
-            main_array[i,j] = 3 + i/Fabric_width - 2*math.log(j+1) / math.log(len)
+            main_array[i,j] = 2 + 0.5*i/Fabric_width - math.sqrt((j+1)/len)
+    plt.imshow(main_array, interpolation='none')
+    plt.waitforbuttonpress() 
     return main_array
 
 
@@ -742,20 +744,35 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
             arr = gen_array(ptrn_imgs, j, False)
             x = random.randint(0, main_array.shape[0] - arr.shape[0])
             y = random.randint(0, main_array.shape[1] - arr.shape[1])        
-            optsx = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
-            optsy = {'disp': True, 'maxiter': 20, 'fatol': 1e-8}
-            resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=optsx)
-            x = int(resx.x)
-            resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', options=optsy)
-            y = int(resy.x)
-            print(resy.fun)
-            if min > resy.fun:
-                min = resy.fun
-                x_min = int(resx.x)
-                y_min = int(resy.x)
+            pos = [x,y]
+            opts = {'disp': False, 'maxiter': 60, 'fatol': 1e-8}
+            ## Maniuplate x and y independantly:
+            # resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=opts)
+            # x = int(resx.x)
+            # resy = optimize.minimize(cost_func, y, args=(main_array, init_main_arr_sum, arr, 0, x), method='Nelder-Mead', options=opts)
+            # y = int(resy.x)            
+            # print(resy.fun)
+            # if min > resy.fun:
+            #     min = resy.fun
+            #     x_min = int(resx.x)
+            #     y_min = int(resy.x)
+            #     arr_min = arr.copy()
+            #     index_min_val = j
+            ## Maniuplate x and y simultaneously:
+            res = optimize.minimize(cost_func, pos, args=(main_array, init_main_arr_sum, arr, 2, 0), method='Nelder-Mead', options=opts)
+            cost = res.fun
+            x = int(res.x[0])
+            y = int(res.x[1])            
+            print(cost)
+            if min > res.fun:
+                min = res.fun
+                x_min = int(res.x[0])
+                y_min = int(res.x[1])
                 arr_min = arr.copy()
                 index_min_val = j
             main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+            plt.imshow(main_arr_copy, interpolation='none')
+            plt.waitforbuttonpress() 
             # plt.imshow(main_arr_copy, interpolation='none')
             # plt.waitforbuttonpress() 
         index_min.append(index_min_val)
@@ -770,23 +787,38 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
 
 
 def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
-    if x_flag:
+    if (x_flag == 1):
         x_pos = int(pos1)
         y_pos = int(pos2)
         if x_pos < 0:
-            cost = 1 - x_pos
+            cost = math.sqrt(1 - x_pos)
             return cost
         if x_pos > (main_array.shape[0] - arr.shape[0]):
-            cost = x_pos -(main_array.shape[0] - arr.shape[0])
+            cost = math.sqrt(x_pos -(main_array.shape[0] - arr.shape[0]))
             return cost
-    else:
+    elif (x_flag == 0):
         x_pos = int(pos2)
         y_pos = int(pos1)
         if y_pos < 0:
-            cost = 1 - y_pos
+            cost = math.sqrt(1 - y_pos)
             return cost
         if y_pos > (main_array.shape[1] - arr.shape[1]):
-            cost = y_pos -(main_array.shape[1] - arr.shape[1])    
+            cost = math.sqrt(y_pos -(main_array.shape[1] - arr.shape[1]))
+            return cost
+    else: # x_flag = 2, Manipulate both x and y
+        x_pos = int(pos1[0])
+        y_pos = int(pos1[1])
+        if x_pos < 0:
+            cost = math.sqrt(1 - x_pos)
+            return cost
+        if x_pos > (main_array.shape[0] - arr.shape[0]):
+            cost = math.sqrt(x_pos -(main_array.shape[0] - arr.shape[0]))
+            return cost
+        if y_pos < 0:
+            cost = math.sqrt(1 - y_pos)
+            return cost
+        if y_pos > (main_array.shape[1] - arr.shape[1]):
+            cost = math.sqrt(y_pos -(main_array.shape[1] - arr.shape[1]))
             return cost
 
     area_replaced = arr.size / main_array.size
@@ -795,3 +827,4 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
     cost = main_arr_copy.sum() * area_replaced / init_main_arr_sum;
     print(cost)
     return cost
+
