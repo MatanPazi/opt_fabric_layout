@@ -674,15 +674,15 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     epsilon = 0.001
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
     shape = (blank.shape[1],blank.shape[0])
-    arr = np.zeros(shape, dtype = np.int16)
+    arr = np.zeros(shape)
     #Determine whether each pixel is in or outside the contour and give the relevant value.
     for i in range (arr.shape[0]):
         for j in range (arr.shape[1]):
             ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
             if (ptInCntr >= 0): #Inside or on contour
-                arr.itemset((i,j), 0)
+                arr.itemset((i,j), 0.0)
             else:   #Outisde contour
-                arr.itemset((i,j), 1)
+                arr.itemset((i,j), 0.5)
     if inv:
         arr = np.rot90(arr, 2)
     ## For debugging
@@ -745,7 +745,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
             x = random.randint(0, main_array.shape[0] - arr.shape[0])
             y = random.randint(0, main_array.shape[1] - arr.shape[1])        
             pos = [x,y]
-            opts = {'disp': False, 'maxiter': 60, 'fatol': 1e-8}
+            opts = {'disp': False, 'maxiter': 120, 'fatol': 1e-10}
             ## Maniuplate x and y independantly:
             # resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=opts)
             # x = int(resx.x)
@@ -773,8 +773,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
             main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
             plt.imshow(main_arr_copy, interpolation='none')
             plt.waitforbuttonpress() 
-            # plt.imshow(main_arr_copy, interpolation='none')
-            # plt.waitforbuttonpress() 
+
         index_min.append(index_min_val)
         main_array[x_min:x_min+arr_min.shape[0], y_min:y_min+arr_min.shape[1]] = arr_min
         plt.imshow(main_array, interpolation='none')
@@ -821,10 +820,13 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
             cost = math.sqrt(y_pos -(main_array.shape[1] - arr.shape[1]))
             return cost
 
-    area_replaced = arr.size / main_array.size
+    # area_replaced = arr.size / main_array.size
     main_arr_copy = main_array.copy()
-    main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]] = arr
-    cost = main_arr_copy.sum() * area_replaced / init_main_arr_sum;
+    init_sum = main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]].sum()
+    post_sum = np.multiply((main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]]),arr).sum()
+    cost = post_sum / init_sum
     print(cost)
+    plt.imshow(main_arr_copy, interpolation='none')
+    plt.waitforbuttonpress() 
     return cost
 
