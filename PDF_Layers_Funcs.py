@@ -732,10 +732,11 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
     Returns:
         void
     """   
-    init_main_arr_sum = main_array.sum()
+    
     min = 1
     index_min = []
     for i in range(num_of_ptrns):
+        init_main_arr_sum = main_array.sum()
         min = 1
         for j in range(num_of_ptrns):
             if j in index_min:
@@ -822,11 +823,10 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
 
     # area_replaced = arr.size / main_array.size
     main_arr_copy = main_array.copy()
-    init_sum = main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]].sum()
-    post_sum = np.multiply((main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]]),arr).sum()
-    cost = post_sum / init_sum
+    main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]] = np.multiply((main_arr_copy[x_pos:x_pos+arr.shape[0], y_pos:y_pos+arr.shape[1]]),arr)
+    cost = main_arr_copy.sum() / init_main_arr_sum
     print(cost)
-    plt.imshow(main_arr_copy, interpolation='none')
-    plt.waitforbuttonpress() 
+    # plt.imshow(main_arr_copy, interpolation='none')
+    # plt.waitforbuttonpress() 
     return cost
 
