@@ -682,7 +682,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
             if (ptInCntr >= 0): #Inside or on contour
                 arr.itemset((i,j), 0.0)
             else:   #Outisde contour
-                arr.itemset((i,j), 0.5)
+                arr.itemset((i,j), 1.0)
     if inv:
         arr = np.rot90(arr, 2)
     ## For debugging
@@ -811,7 +811,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
 
 
 def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
-    area_replaced = arr.size / main_array.size
+    area_replaced = arr.size / main_array.size      # Consider changing to actual pattern area of array. Something like arr.sum()/arr.size
     if (x_flag == 1):       # x manipulation only
         x_pos = int(pos1)
         y_pos = int(pos2)
