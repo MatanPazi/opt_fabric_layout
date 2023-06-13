@@ -715,7 +715,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     main_array = np.zeros(shape)
     for i in range(Fabric_width):
         for j in range(len):
-            main_array[i,j] = 20*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))
+            main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
     return main_array
@@ -748,7 +748,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
                 x = random.randint(0, main_array.shape[0] - arr.shape[0])
                 y = random.randint(0, main_array.shape[1] - arr.shape[1])        
                 init_pos = [x,y]
-                opts = {'disp': False, 'maxiter': 20, 'fatol': 1e-10}
+                opts = {'disp': False, 'maxiter': 40, 'fatol': 1e-10}
                 ## Maniuplate x and y independantly:
                 # resx = optimize.minimize(cost_func, x, args=(main_array, init_main_arr_sum, arr, 1, y), method='Nelder-Mead', options=opts)
                 # x = int(resx.x)
@@ -790,7 +790,9 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
                 y_min = int(res_min.x[1])
                 arr_min = arr.copy()
                 index_min_val = j            
-            main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = arr
+
+
+            main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]] = np.multiply((main_arr_copy[x:x+arr.shape[0], y:y+arr.shape[1]]),arr)
             print("Now")
             pos_Now = [x,y]
             print(pos_Now)
@@ -798,7 +800,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
             plt.waitforbuttonpress() 
 
         index_min.append(index_min_val)
-        main_array[x_min:x_min+arr_min.shape[0], y_min:y_min+arr_min.shape[1]] = arr_min
+        main_array[x_min:x_min+arr_min.shape[0], y_min:y_min+arr_min.shape[1]] = np.multiply(main_array[x_min:x_min+arr_min.shape[0], y_min:y_min+arr_min.shape[1]],arr_min)
         plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress() 
 
