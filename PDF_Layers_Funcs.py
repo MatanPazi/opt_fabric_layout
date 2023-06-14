@@ -671,8 +671,15 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     for i in range((cntr[0].shape[0])):
         cntr[0][i][0][0] -= x_min
         cntr[0][i][0][1] -= y_min
-    epsilon = 0.001
+    epsilon = 0.01
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
+    ## For debugging
+    # for i in range(len(aprox_cnt)):
+    #     x_cord = aprox_cnt.item(2*i)
+    #     y_cord = aprox_cnt.item(2*i+1)
+    #     loc = (x_cord,y_cord)
+    #     cv2.circle(blank,(loc), 5, (0,0,255), -1)
+    # cv2.imwrite('image_copy.png',blank)
     shape = (blank.shape[1],blank.shape[0])
     arr = np.zeros(shape)
     #Determine whether each pixel is in or outside the contour and give the relevant value.
@@ -691,7 +698,14 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     # arr = np.rot90(arr, 2)
     # plt.imshow(arr.T, interpolation='none')
     # plt.waitforbuttonpress()   
-    return arr.T
+
+    # Find contour center
+    M = cv2.moments(cntr)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    center = (cx,cy)
+
+    return arr.T, aprox_cnt, center
 
 def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     """
@@ -709,7 +723,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
     """    
     len = 0
     for i in range(num_of_ptrns):
-        arr = gen_array(ptrn_imgs, i, False)
+        arr,_,_ = gen_array(ptrn_imgs, i, False)
         len += arr.shape[0]
     shape = (Fabric_width, len)
     main_array = np.zeros(shape)
@@ -742,7 +756,7 @@ def opt_place(main_array, num_of_ptrns, ptrn_imgs):
             if j in index_min:
                 continue
             main_arr_copy = main_array.copy()
-            arr = gen_array(ptrn_imgs, j, False)
+            arr,_,_ = gen_array(ptrn_imgs, j, False)
             for k in range(2):
                 cost_min = 1
                 x = random.randint(0, main_array.shape[0] - arr.shape[0])
