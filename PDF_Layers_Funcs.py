@@ -869,17 +869,7 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
                 main_arr_len = main_array.shape[1]  
 
     main_arr_copy = main_array.copy()
-    debug1 = main_arr_wid
-    debug2 = main_arr_len
-    debug3 = arr_x_start
-    debug4 = arr_x_end
-    debug5 = arr_y_start
-    debug6 = arr_y_end
-    debug7 = arr[arr_x_start:arr_x_end,arr_y_start:arr_y_end]
-    debug8 = main_arr_copy[x_pos:main_arr_wid, y_pos:main_arr_len]
-    debug9 = np.multiply((main_arr_copy[x_pos:main_arr_wid, y_pos:main_arr_len]),arr[arr_x_start:arr_x_end,arr_y_start:arr_y_end])
     main_arr_copy[x_pos:main_arr_wid, y_pos:main_arr_len] = np.multiply((main_arr_copy[x_pos:main_arr_wid, y_pos:main_arr_len]),arr[arr_x_start:arr_x_end,arr_y_start:arr_y_end])
-    debug10 = main_arr_copy[x_pos:main_arr_wid, y_pos:main_arr_len]
     cost = area_replaced * main_arr_copy.sum() / init_main_arr_sum
     # print(cost)
     # plt.imshow(main_arr_copy, interpolation='none')
