@@ -708,8 +708,8 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
                     arr.itemset((i,j), 0.0)
                 else:   #Outisde contour
                     arr.itemset((i,j), 1.0)
-    if config == 1:
-        arr = arr / max_dist
+    # if config == 1:
+    #     arr = arr / max_dist
     if inv:
         arr = np.rot90(arr, 2)
     ## For debugging
