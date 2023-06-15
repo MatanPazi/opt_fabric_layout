@@ -26,9 +26,9 @@ fold_patterns(fold, ptrn_imgs, rotation_angles, size)
 # gen_array(ptrn_imgs, len(pattern_contours), False)
 
 # Optimization section
-Fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
-main_array = init_main_arr(Fabric_width, len(copies), ptrn_imgs)
-opt_place(main_array, len(copies), ptrn_imgs)
+fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
+# main_array = init_main_arr(Fabric_width, len(copies), ptrn_imgs)
+opt_place(len(copies), ptrn_imgs, fabric_width)
 
 # TODO:
 # The function gen_array should also return the approx polygon created and the center of gravity (Reference point).
