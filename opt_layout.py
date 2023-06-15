@@ -39,7 +39,7 @@ opt_place(main_array, len(copies), ptrn_imgs)
 # Place first pattern according to least amount of waste (Choose according to largest area for now, to be improved in the future)
 # Next, each pattern's reference point is set to be on each of the previous pattern's polygon points.
 # After each reference point placement, a minimization algo should run to move the added pattern from inside the other patterns (Preventing overlap).
-    # This will be done by giving each pixel inside the pattern arrays a value equal to the distance from the pattern edge (min on x and y distances), 0 at the edge.
+    # Each pixel inside the pattern arrays will equal to the distance from the pattern edge (min on x and y distances), 0 on the contour edges.
     # The cost func will return the sum of the area covered by the added pattern divided by the sum of the added pattern.
     # So the pattern will strive to be outside the other patterns where the values are 1(?)
 # The lowest cost returned will be the optimal placement of that pattern.

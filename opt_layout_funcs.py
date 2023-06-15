@@ -673,6 +673,11 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
         cntr[0][i][0][1] -= y_min
     epsilon = 0.01
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
+    # Find contour center
+    M = cv2.moments(cntr[0])
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    center = (cx,cy)
     ## For debugging
     # for i in range(len(aprox_cnt)):
     #     x_cord = aprox_cnt.item(2*i)
@@ -682,14 +687,20 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     # cv2.imwrite('image_copy.png',blank)
     shape = (blank.shape[1],blank.shape[0])
     arr = np.zeros(shape)
+    max_dist = 0
     #Determine whether each pixel is in or outside the contour and give the relevant value.
     for i in range (arr.shape[0]):
         for j in range (arr.shape[1]):
-            ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
-            if (ptInCntr >= 0): #Inside or on contour
+            dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+            if max_dist < dist:
+                max_dist = dist
+            if (dist > 0): #Inside contour
+                arr.itemset((i,j), dist)
+            elif (dist == 0): #on contour
                 arr.itemset((i,j), 0.0)
             else:   #Outisde contour
                 arr.itemset((i,j), 1.0)
+    arr = arr / max_dist
     if inv:
         arr = np.rot90(arr, 2)
     ## For debugging
@@ -698,12 +709,6 @@ def gen_array(ptrn_imgs, ptrn_num, inv):
     # arr = np.rot90(arr, 2)
     # plt.imshow(arr.T, interpolation='none')
     # plt.waitforbuttonpress()   
-
-    # Find contour center
-    M = cv2.moments(cntr)
-    cx = int(M['m10']/M['m00'])
-    cy = int(M['m01']/M['m00'])
-    center = (cx,cy)
 
     return arr.T, aprox_cnt, center
 
@@ -726,10 +731,13 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs):
         arr,_,_ = gen_array(ptrn_imgs, i, False)
         len += arr.shape[0]
     shape = (Fabric_width, len)
-    main_array = np.zeros(shape)
-    for i in range(Fabric_width):
-        for j in range(len):
-            main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))
+    ## Previous implementation
+    # main_array = np.zeros(shape)
+    # for i in range(Fabric_width):
+    #     for j in range(len):
+    #         main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))
+    ## New implementation 
+    main_array = np.ones(shape)
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
     return main_array
