@@ -827,20 +827,20 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
             # main_arr_copy = main_array.copy()        
             arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, False, 1)
             cost_min = 1e10
-            for j in range(len(main_poly_pts)):
-                y = main_poly_pts[k][j][0][0] - center_y
-                x = main_poly_pts[k][j][0][1] - center_x
+            for p in range(len(main_poly_pts)):
+                for j in range(len(main_poly_pts[p])):
+                    y = main_poly_pts[k][j][0][0] - center_y
+                    x = main_poly_pts[k][j][0][1] - center_x
 
-                init_pos = [y,x]
-                ## Maniuplate x and y simultaneously:                
-                res1 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-                init_pos = [res1.x[0], res1.x[1]]
-                res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-                print(res2.x)
-                cost = res2.fun
-                if cost_min > cost:
-                    cost_min = cost
-                    res_min = res2
+                    init_pos = [y,x]
+                    ## Maniuplate x and y simultaneously:                
+                    res1 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                    init_pos = [res1.x[0], res1.x[1]]
+                    res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                    cost = res2.fun
+                    if cost_min > cost:
+                        cost_min = cost
+                        res_min = res2
 
             if res_min.x[0] < 0:
                 res_min.x[0] = 0
@@ -869,7 +869,7 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
 
 
         main_poly_ind.append(index_min_val)
-        main_poly_pts.append()
+        main_poly_pts.append(aprox_cnt_min)
         main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = arr_min
         plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress() 
