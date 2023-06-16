@@ -673,7 +673,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     for i in range((cntr[0].shape[0])):
         cntr[0][i][0][0] -= x_min
         cntr[0][i][0][1] -= y_min
-    epsilon = 0.01
+    epsilon = 0.05
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
     # Find contour center
     M = cv2.moments(cntr[0])
@@ -814,30 +814,34 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
-    
-    min = 1
-    opts = {'disp': False, 'maxiter': 40, 'fatol': 1e-10}
-    for i in range(num_of_ptrns):
-        if i in main_poly_ind:
+    main_array_copy = main_array.copy()
+    opts = {'disp': True, 'maxiter': 10, 'fatol': 1e-10}
+    min = 1e10
+    index_min_val = 0
+    for k in range(num_of_ptrns):
+        if k in main_poly_ind:
             continue
-        main_arr_copy = main_array.copy()
-        min = 1
-        arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, False, 1)
-        for j in range(len(aprox_cnt)):
-            cost_min = 1
-            y = main_poly_pts[j][j][0][0] - center_y
-            x = main_poly_pts[j][j][0][1] - center_x
+        for i in range(num_of_ptrns):
+            if i in main_poly_ind:
+                continue
+            # main_arr_copy = main_array.copy()        
+            arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, False, 1)
+            cost_min = 1e10
+            for j in range(len(main_poly_pts)):
+                y = main_poly_pts[k][j][0][0] - center_y
+                x = main_poly_pts[k][j][0][1] - center_x
 
-            init_pos = [y,x]
-            ## Maniuplate x and y simultaneously:                
-            res1 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-            init_pos = [res1.x[0], res1.x[1]]
-            res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-            print(res2.x)
-            cost = res2.fun
-            if cost_min > cost:
-                cost_min = cost
-                res_min = res2
+                init_pos = [y,x]
+                ## Maniuplate x and y simultaneously:                
+                res1 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                init_pos = [res1.x[0], res1.x[1]]
+                res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                print(res2.x)
+                cost = res2.fun
+                if cost_min > cost:
+                    cost_min = cost
+                    res_min = res2
+
             if res_min.x[0] < 0:
                 res_min.x[0] = 0
             if res_min.x[0] > (main_array.shape[0] - arr.shape[0]):
@@ -851,31 +855,29 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
             y = int(res_min.x[0])            
             x = int(res_min.x[1])
 
-            print(res_min.x)
-            print(res_min.fun)
+            main_array_copy[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
+            plt.imshow(main_array_copy, interpolation='none')
+            plt.waitforbuttonpress() 
+
             if min > res_min.fun:
                 min = res_min.fun
                 y_min = int(res_min.x[0])
                 x_min = int(res_min.x[1])
                 arr_min = arr.copy()
-                index_min_val = j            
+                index_min_val = i   
+                aprox_cnt_min = aprox_cnt
 
-
-            main_arr_copy[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
-            print("Now")
-            pos_Now = [y,x]
-            print(pos_Now)
-            plt.imshow(main_arr_copy, interpolation='none')
-            plt.waitforbuttonpress() 
 
         main_poly_ind.append(index_min_val)
-        main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]],arr_min)
+        main_poly_pts.append()
+        main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = arr_min
         plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress() 
 
 
 def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
     norm_param = arr.size / main_array.size      # Normalization parameter
+    cost = 0
     if (x_flag == 1):       # x manipulation only
         x_pos = int(pos1)
         y_pos = int(pos2)
@@ -903,37 +905,35 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
         arr_y_end = arr.shape[0]        
         arr_x_start = 0
         arr_x_end = arr.shape[1]
-
         if y_pos < 0:
             if abs(y_pos) > arr.shape[0]:
-                cost = (abs(y_pos) - arr.shape[0]) * norm_param
-                return cost
+                cost += (abs(y_pos) - arr.shape[0]) * norm_param
             else:
                 arr_y_start = abs(y_pos)
                 y_pos = 0
         if y_pos > (main_array.shape[0] - arr.shape[0]):
             if y_pos > main_array.shape[0]:
-                cost = (y_pos - main_array.shape[0]) * norm_param
-                return cost
+                cost += (y_pos - main_array.shape[0]) * norm_param
             else:
                 arr_y_end = main_array.shape[0] - y_pos
                 main_arr_len = main_array.shape[0]  
 
         if x_pos < 0:
             if abs(x_pos) > arr.shape[1]:
-                cost = (abs(x_pos) - arr.shape[1]) * norm_param
-                return cost
+                cost += (abs(x_pos) - arr.shape[1]) * norm_param
             else:
                 arr_x_start = abs(x_pos)
                 x_pos = 0
         if x_pos > (main_array.shape[1] - arr.shape[1]):
             if x_pos > main_array.shape[0]:
-                cost = (x_pos - main_array.shape[1]) * norm_param
-                return cost
+                cost += (x_pos - main_array.shape[1]) * norm_param
             else:
                 arr_x_end = main_array.shape[1] - x_pos
                 main_arr_wid = main_array.shape[1]            
-
+    
+    if cost != 0:
+        return cost
+    
     main_arr_copy = main_array.copy()
     main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = np.multiply((main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid]),arr[arr_y_start:arr_y_end, arr_x_start:arr_x_end])
     cost = norm_param * main_arr_copy.sum() / init_main_arr_sum
@@ -951,23 +951,21 @@ def cost_func_NFP(pos, main_array, arr):
     main_arr_len = y_pos+arr.shape[0]
     main_arr_wid = x_pos+arr.shape[1]    
     norm_param = arr.sum() + main_array.sum()      # Normalization parameter
-
+    cost = 0
     if y_pos < 0:
-        cost = abs(y_pos)
-        return cost
+        cost += abs(y_pos)
 
     if y_pos > (main_array.shape[0] - arr.shape[0]):
-        cost = (y_pos - main_array.shape[0])
-        return cost  
+        cost += (y_pos + arr.shape[0] - main_array.shape[0])
 
     if x_pos < 0:
-        cost = abs(x_pos)
-        return cost
+        cost += abs(x_pos)
 
     if x_pos > (main_array.shape[1] - arr.shape[1]):
-        cost = (x_pos - main_array.shape[1])
+        cost += (x_pos + arr.shape[1] - main_array.shape[1])
+    
+    if cost != 0:
         return cost
-          
 
 
     main_arr_copy = main_array.copy()
@@ -975,6 +973,6 @@ def cost_func_NFP(pos, main_array, arr):
     main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
     print(cost)
     print(pos)
-    plt.imshow(main_arr_copy, interpolation='none')
-    plt.waitforbuttonpress() 
+    # plt.imshow(main_arr_copy, interpolation='none')
+    # plt.waitforbuttonpress() 
     return cost
