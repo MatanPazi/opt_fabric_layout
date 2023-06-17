@@ -692,29 +692,28 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     #Determine whether each pixel is in or outside the contour and give the relevant value.
     for i in range (arr.shape[0]):
         for j in range (arr.shape[1]):
-            if config == 0:
-                ptInCntr = cv2.pointPolygonTest(aprox_cnt, (i,j), False)
-                if (ptInCntr >= 0): #Inside or on contour
-                    arr.itemset((i,j), 0.0)
-                else:
-                    arr.itemset((i,j), 1.0)
+            # if config == 0:
+            dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+            if (dist >= 0): #Inside or on contour
+                arr.itemset((i,j), 0.0)
             else:
-                dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
-                if max_dist < dist:
-                    max_dist = dist
-                if (dist > 0): #Inside contour
-                    arr.itemset((i,j), dist)
-                elif (dist == 0): #on contour
-                    arr.itemset((i,j), 0.0)
-                else:   #Outisde contour
-                    arr.itemset((i,j), 1.0)
+                arr.itemset((i,j), 1/(-dist+0.1))
+            # else:
+            #     dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+            #     if max_dist < dist:
+            #         max_dist = dist
+            #     if (dist > 0): #Inside contour
+            #         arr.itemset((i,j), dist)
+            #     elif (dist == 0): #on contour
+            #         arr.itemset((i,j), 0.5)
+            #     else:   #Outisde contour
+            #         arr.itemset((i,j), 1.0)
     # if config == 1:
     #     arr = arr / max_dist
     if inv:
         arr = np.rot90(arr, 2)
     ## For debugging
-    # plt.imshow(arr.T, interpolation='none')
-    # plt.waitforbuttonpress()   
+  
     # arr = np.rot90(arr, 2)
     # plt.imshow(arr.T, interpolation='none')
     # plt.waitforbuttonpress()   
@@ -751,6 +750,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, approx_cntrs):
     else:
         # TODO: input to init_main_arr function also list of current approximated contours and set pixel value to distance min from them.
         main_array = math.sqrt(Fabric_width**2 + len**2) * np.ones(shape)
+        # main_array = np.zeros(shape)
         plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress()
         for cntr in approx_cntrs:
@@ -759,9 +759,9 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, approx_cntrs):
                     dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
                     if dist > 0:    # Outside the contour
                         if dist < main_array[i,j]:  # Min distance 
-                            main_array[i,j] = dist    
+                            main_array[i,j] = 1/(dist+0.1)
                     else:
-                        main_array[i,j] = 1
+                        main_array[i,j] = 0
     
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
@@ -824,12 +824,12 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     # Preparing for subsequent pattern placements
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, main_poly_pts)
     
-    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply((main_array[y:y+arr.shape[0], x:x+arr.shape[1]]), arr)
+    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
     
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
     main_array_copy = main_array.copy()
-    opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
+    opts = {'disp': False, 'maxiter': 4, 'fatol': 1e-10}
     min = 1e10
     index_min_val = 0
     for k in range(num_of_ptrns):
@@ -990,7 +990,6 @@ def cost_func_NFP(pos, main_array, arr):
     x_pos = int(pos[1])
     main_arr_len = y_pos+arr.shape[0]
     main_arr_wid = x_pos+arr.shape[1]    
-    norm_param = arr.sum() + main_array.sum()      # Normalization parameter
     cost = 0
     if y_pos < 0:
         cost += abs(y_pos)
@@ -1008,11 +1007,19 @@ def cost_func_NFP(pos, main_array, arr):
         return cost
 
 
-    main_arr_copy = main_array.copy()
-    cost = (main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + arr.sum() + x_pos) / norm_param
-    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
+    main_arr_copy = main_array.copy()    
+    # cost = (main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + arr.sum() + x_pos) / norm_param
+    norm_param = main_arr_copy.sum()
+    
+
+    # cost = (1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + 0.1) + x_pos / main_arr_copy.shape[1]) / norm_param
+    cost = (1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + 0.1))
+    # main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
+    shape = (arr.shape[0], arr.shape[1])
+    arr_demo = 10*np.ones(shape)
+    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr_demo
     print(cost)
     print(pos)
-    # plt.imshow(main_arr_copy, interpolation='none')
-    # plt.waitforbuttonpress() 
+    plt.imshow(main_arr_copy, interpolation='none')
+    plt.waitforbuttonpress() 
     return cost
