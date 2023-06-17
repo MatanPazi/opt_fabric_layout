@@ -673,7 +673,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     for i in range((cntr[0].shape[0])):
         cntr[0][i][0][0] -= x_min
         cntr[0][i][0][1] -= y_min
-    epsilon = 0.05
+    epsilon = 5
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
     # Find contour center
     M = cv2.moments(cntr[0])
@@ -723,7 +723,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     else:
         return arr.T, aprox_cnt, cy, cx, max_dist
 
-def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config):
+def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, approx_cntrs):
     """
     Returns an initialized main fabric array. \n
     leftmost column values are 1, rightmost column values are 2 \n
@@ -749,7 +749,18 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config):
             for j in range(len):
                 main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))        
     else:
-        main_array = np.ones(shape)
+        # TODO: input to init_main_arr function also list of current approximated contours and set pixel value to distance min from them.
+        main_array = -math.sqrt(Fabric_width**2 + len**2) * np.ones(shape)
+        plt.imshow(main_array, interpolation='none')
+        plt.waitforbuttonpress()
+        for cntr in approx_cntrs:
+            for i in range(Fabric_width):
+                for j in range(len):
+                    dist = cv2.pointPolygonTest(cntr, (i,j), True)                    
+                    if dist < 0 and dist > main_array[i,j]:    #Outside the contour
+                        main_array[i,j] = dist        
+        main_array *= -1
+
     
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
@@ -796,7 +807,7 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
         void
     """   
     # First pattern placement
-    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 0)
+    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 0, 0)
     main_poly_ind = []
     main_poly_pts = []
     y,x,arr_index = first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs)
@@ -810,12 +821,12 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     main_poly_pts.append(aprox_cnt)
     
     # Preparing for subsequent pattern placements
-    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1)
+    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, main_poly_pts)
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
     main_array_copy = main_array.copy()
-    opts = {'disp': True, 'maxiter': 10, 'fatol': 1e-10}
+    opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
     min = 1e10
     index_min_val = 0
     for k in range(num_of_ptrns):
@@ -829,18 +840,44 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
             cost_min = 1e10
             for p in range(len(main_poly_pts)):
                 for j in range(len(main_poly_pts[p])):
+                    main_array_copy = main_array.copy()
+
                     y = main_poly_pts[k][j][0][0] - center_y
                     x = main_poly_pts[k][j][0][1] - center_x
+                    
 
                     init_pos = [y,x]
+                    print("init")
+                    print(init_pos)
+                    if x > 0 and y < (main_array.shape[0] - arr.shape[0]):                        
+                        main_array_copy[int(y):int(y)+arr.shape[0], int(x):int(x)+arr.shape[1]] = arr
+                        print("before")
+                        plt.imshow(main_array_copy, interpolation='none')
+                        plt.waitforbuttonpress()
                     ## Maniuplate x and y simultaneously:                
                     res1 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-                    init_pos = [res1.x[0], res1.x[1]]
-                    res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-                    cost = res2.fun
+                    # init_pos = [res1.x[0], res1.x[1]]
+                    # res2 = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                    y = res1.x[0]
+                    x = res1.x[1]
+                    if x > 0 and y < (main_array.shape[0] - arr.shape[0]):                        
+                        main_array_copy[int(y):int(y)+arr.shape[0], int(x):int(x)+arr.shape[1]] = arr
+                        print("after")
+                        plt.imshow(main_array_copy, interpolation='none')
+                        plt.waitforbuttonpress()
+
+
+                    cost = res1.fun
                     if cost_min > cost:
                         cost_min = cost
-                        res_min = res2
+                        res_min = res1
+                        if res_min.x[1] > 0 and res_min.x[0] < (main_array.shape[0] - arr.shape[0]):
+                            y = int(res_min.x[0])            
+                            x = int(res_min.x[1])
+                            # main_array_copy[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
+                            # plt.imshow(main_array_copy, interpolation='none')
+                            # plt.waitforbuttonpress()
+
 
             if res_min.x[0] < 0:
                 res_min.x[0] = 0
