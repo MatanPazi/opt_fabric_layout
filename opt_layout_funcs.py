@@ -750,17 +750,18 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, approx_cntrs):
                 main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))        
     else:
         # TODO: input to init_main_arr function also list of current approximated contours and set pixel value to distance min from them.
-        main_array = -math.sqrt(Fabric_width**2 + len**2) * np.ones(shape)
+        main_array = math.sqrt(Fabric_width**2 + len**2) * np.ones(shape)
         plt.imshow(main_array, interpolation='none')
         plt.waitforbuttonpress()
         for cntr in approx_cntrs:
             for i in range(Fabric_width):
                 for j in range(len):
-                    dist = cv2.pointPolygonTest(cntr, (i,j), True)                    
-                    if dist < 0 and dist > main_array[i,j]:    #Outside the contour
-                        main_array[i,j] = dist        
-        main_array *= -1
-
+                    dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
+                    if dist > 0:    # Outside the contour
+                        if dist < main_array[i,j]:  # Min distance 
+                            main_array[i,j] = dist    
+                    else:
+                        main_array[i,j] = 1
     
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress() 
@@ -822,7 +823,9 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     
     # Preparing for subsequent pattern placements
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, main_poly_pts)
-    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
+    
+    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply((main_array[y:y+arr.shape[0], x:x+arr.shape[1]]), arr)
+    
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
     main_array_copy = main_array.copy()
