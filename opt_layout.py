@@ -32,7 +32,7 @@ opt_place(len(copies), ptrn_imgs, fabric_width)
 
 # TODO:
 # The function gen_array should also return the approx polygon created and the center of gravity (Reference point).
-    # In the furure, can make sure the distance between points in the approx polygon aren't bigger than 50(?) pixels (Make it a configurable parameter).
+    # In the future, can make sure the distance between points in the approx polygon aren't bigger than 50(?) pixels (Make it a configurable parameter).
         # Since the patterns are going to go point by point, so don't want to miss to much area.
 
 
