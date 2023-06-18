@@ -675,10 +675,6 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
         cntr[0][i][0][1] -= y_min
     epsilon = 5
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
-    # for i in range(len(aprox_cnt)): # Changi ng to (y,x) from (x,y) format
-    #     tempx = aprox_cnt[i][0][0]
-    #     aprox_cnt[i][0][0] = aprox_cnt[i][0][1]
-    #     aprox_cnt[i][0][1] = tempx
     # Find contour center
     M = cv2.moments(cntr[0])
     cy = int(M['m01']/M['m00'])
@@ -728,6 +724,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     # arr = np.rot90(arr, 2)
     # plt.imshow(arr.T, interpolation='none')
     # plt.waitforbuttonpress()   
+    
     if config == 0:
         return arr.T
     else:
@@ -770,6 +767,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
             for j in range(len):
                 dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
                 if dist > 0:    # Outside the contour
+                    # Fix this. Need to make sure main_array values always show (max_dist - dist) / max_dist from closest contour.
                     if dist < main_array[i,j]:  # Min distance 
                         main_array[i,j] = (max_dist - dist) / max_dist
                 else:
@@ -841,7 +839,7 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
     main_array_copy = main_array.copy()
-    opts = {'disp': False, 'maxiter': 20, 'fatol': 1e-10}
+    opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
     for k in range(num_of_ptrns):
         main_array_init = main_array.copy()
         if k in main_poly_ind:
@@ -910,11 +908,17 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
                 index_min_val = i   
                 aprox_cnt_min = aprox_cnt
         
+        
+        for n in range(len(aprox_cnt_min)): # Changing to (y,x) from (x,y) format
+            tempx = aprox_cnt_min[n][0][0]
+            aprox_cnt_min[n][0][0] = aprox_cnt_min[n][0][1]
+            aprox_cnt_min[n][0][1] = tempx 
+        
         # Need to handle offset and rotation(?)
-        # for m in range(len(aprox_cnt_min)):
-        #         aprox_cnt_min[m][0][0] += y_min
-        #         aprox_cnt_min[m][0][1] += x_min
-
+        for m in range(len(aprox_cnt_min)):
+            aprox_cnt_min[m][0][0] += y_min
+            aprox_cnt_min[m][0][1] += x_min
+               
         main_poly_ind.append(index_min_val)
         main_poly_pts.append(aprox_cnt_min)
 
