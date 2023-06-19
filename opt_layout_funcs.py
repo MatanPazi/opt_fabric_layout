@@ -673,7 +673,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     for i in range((cntr[0].shape[0])):
         cntr[0][i][0][0] -= x_min
         cntr[0][i][0][1] -= y_min
-    epsilon = 5
+    epsilon = 10
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
     # Find contour center
     M = cv2.moments(cntr[0])
@@ -849,6 +849,7 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     main_array_copy = main_array.copy()
     opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
     for k in range(num_of_ptrns):
+        print(k)
         main_array_init = main_array.copy()   
         min = 1e10
         index_min_val = 0
@@ -997,7 +998,7 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
     main_arr_copy = main_array.copy()
     main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = np.multiply((main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid]),arr[arr_y_start:arr_y_end, arr_x_start:arr_x_end])
     cost = norm_param * main_arr_copy.sum() / init_main_arr_sum
-    print(cost)
+    # print(cost)
     # plt.imshow(main_arr_copy, interpolation='none')
     # plt.waitforbuttonpress() 
     
@@ -1029,7 +1030,6 @@ def cost_func_NFP(pos, main_array, arr):
 
     main_arr_copy = main_array.copy()    
     # cost = (main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + arr.sum() + x_pos) / norm_param
-    norm_param = main_arr_copy.sum()
     
 
     # cost = (1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum() + 0.1) + x_pos / main_arr_copy.shape[1]) / norm_param
@@ -1040,6 +1040,7 @@ def cost_func_NFP(pos, main_array, arr):
         cost = 1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum())
     if cost < 0:
         cost *= -100
+    cost *= (1 + (x_pos / main_arr_copy.shape[1]))
     # main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
     shape = (arr.shape[0], arr.shape[1])
     arr_demo = 10*np.ones(shape)
