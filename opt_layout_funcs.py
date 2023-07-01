@@ -178,16 +178,17 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
             alpha = 0
     else:                    # theta != 0 and theta != 90:
         alpha = 90 - theta
-        if width < height:
-            width, height = height, width
-        elif type == 'ptrn_save':
+        if type == 'ang_rtrn' and width > height: # We want the rot ang required to have a horizontal grainline
             alpha += 90
-
-    if type == 'ptrn_save':
-        if alpha < 1:
+        else:                                     # Otherwise, for cropping, we always need to switch width and height
+            width, height = height, width   
+            
+    if type == 'ang_rtrn':
+        allowed_ang = 3
+        if alpha < allowed_ang:
             alpha = 0
-        elif alpha > 89:
-            if (abs(alpha - 90) < 1 and (alpha != 90)):
+        elif alpha > (90-allowed_ang):
+            if (abs(alpha - 90) < allowed_ang and (alpha != 90)):
                 alpha = 90
         return alpha
     
@@ -197,7 +198,8 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     # y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
     image = imutils.rotate_bound(image, angle = alpha)
-    
+    cv2.imwrite('img_test.png',image)
+
     alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
@@ -266,8 +268,6 @@ def find_pattern_contours(image, resized):
     # you want to erode/dilate a given image.
     img = cv2.erode(img, kernel, iterations=6)
     img = cv2.dilate(img, kernel, iterations=3)
-    ## For debugging
-    # image_copy = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
@@ -288,8 +288,9 @@ def find_pattern_contours(image, resized):
             j += 1
         counter += 1
     # For debugging
-    # cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-    # cv2.imwrite('image_copy.png',image_copy)
+    image_copy = img.copy()
+    cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    cv2.imwrite('image_copy.png',image_copy)
     return good_contours 
 
 
@@ -387,12 +388,13 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         rot_ang - A list of the rotation angles needed for each pattern to get the first (Arbitrary) direction contour horizontal.
     """
     img0 = cv2.imread(ptrn_image)
+    cv2.imwrite('img_test.png',img0)
     rot_ang = []
     for i in range(len(pattern_contours)):
         img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
         cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
-        angle = crop_image(cnt, img1, 'ptrn_save', i, ptrn_imgs)
+        angle = crop_image(cnt, img1, 'ang_rtrn', i, ptrn_imgs)
         rot_ang.append(angle)
         img = img1.copy()
         
