@@ -9,13 +9,13 @@ import glob
 # Pattern_Layer = 3
 # pdf_name = 'LL Leo Pattern Size A0.pdf'
 
-# Direction_Layer = 0
-# Pattern_Layer = 3
-# pdf_name = 'LL Leo Pattern Size A0.pdf'
-
 Direction_Layer = 0
 Pattern_Layer = 1
-pdf_name = 'bt67-A0-pattern.pdf'
+pdf_name = 'bt119-A0-pattern.pdf'
+
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
