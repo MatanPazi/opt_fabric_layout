@@ -570,8 +570,12 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
     Returns:
         void
     """
-    resize_y = A0_Height / size[0]
-    resize_x = A0_Width / size[1]
+    if size[0] > size[1]:       # Portrait
+        resize_y = A0_Height / size[0]
+        resize_x = A0_Width / size[1]
+    else:                       # Portrait
+        resize_y = A0_Width / size[0]
+        resize_x = A0_Height / size[1]
 
     for i in range(len(fold_list)):
         if fold_list[i] != 0:            
