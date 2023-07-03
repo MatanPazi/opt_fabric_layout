@@ -866,10 +866,10 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
     # Adding pattern # to image.
-    cv2.imwrite('img_test.png',main_array*200)
-    image = cv2.imread('img_test.png')
+    cv2.imwrite('opt_res.png',main_array*200)
+    image = cv2.imread('opt_res.png')
     image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=2, color=(255,255,0), thickness=3)
-    cv2.imwrite('img_test.png',image)
+    cv2.imwrite('opt_res.png',image)
     
     # plt.imshow(main_array, interpolation='none')
     # plt.waitforbuttonpress()
@@ -965,10 +965,10 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
             main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)            
 
             # Adding pattern # to image.
-            image = cv2.imread('img_test.png', cv2.IMREAD_GRAYSCALE)
+            image = cv2.imread('opt_res.png', cv2.IMREAD_GRAYSCALE)
             image[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = abs(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]]) * 200
             image = cv2.putText(img=image, text=str(index_min_val), org=(center_x_min, center_y_min), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=2, color=(255,255,0), thickness=3)
-            cv2.imwrite('img_test.png',image)
+            cv2.imwrite('opt_res.png',image)
              
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
