@@ -203,7 +203,7 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     alpha_rad = math.radians(alpha)
 
     y_temp = y_old*math.cos(alpha_rad) + x_old*math.sin(alpha_rad)
-    x_offset = math.sin(alpha_rad) * max(shape)
+    x_offset = math.sin(alpha_rad) * shape[1]
     phi = math.acos(y_temp/distance)
     beta = math.atan2(x_old, y_old)
     if beta > alpha_rad:
