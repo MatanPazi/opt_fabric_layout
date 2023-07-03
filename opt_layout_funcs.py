@@ -874,7 +874,7 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     # plt.imshow(main_array, interpolation='none')
     # plt.waitforbuttonpress()
     main_array_copy = main_array.copy()
-    opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
+    opts = {'disp': False, 'maxiter': 50, 'fatol': 1e-10}
     for k in range(num_of_ptrns):
         print(k)
         main_array_init = main_array.copy()   
