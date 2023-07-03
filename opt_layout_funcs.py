@@ -570,10 +570,11 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
     Returns:
         void
     """
+    # Dependent on original image orientation:
     if size[0] > size[1]:       # Portrait
         resize_y = A0_Height / size[0]
         resize_x = A0_Width / size[1]
-    else:                       # Portrait
+    else:                       # Landscape
         resize_y = A0_Width / size[0]
         resize_x = A0_Height / size[1]
 
