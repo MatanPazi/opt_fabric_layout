@@ -167,9 +167,9 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     if theta == 90:
         if width > height:
             alpha = 90
+            width, height = height, width
         else:
             alpha = 0
-        width, height = height, width
     elif theta == 0:
         if width < height:
             alpha = 90        
