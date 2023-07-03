@@ -43,6 +43,7 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
         print("Unable to locate layers in PDF.")
         sys.exit(1)
 
+    num_of_layers = len(layers)
     page_count = len(pdf.pages)
     pdf.close()
 
