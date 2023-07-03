@@ -288,9 +288,10 @@ def find_pattern_contours(image, resized):
             j += 1
         counter += 1
     # For debugging
-    image_copy = img.copy()
-    cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-    cv2.imwrite('image_copy.png',image_copy)
+    if not resized:
+        image_copy = img.copy()
+        cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        cv2.imwrite('patterns_overview.png',image_copy) 
     return good_contours 
 
 
@@ -328,6 +329,11 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         image_copy = img_cropped.copy()
         cv2.imwrite('image_copy.png',image_copy) 
         # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        # Used to add text on pattern
+        rect_ptrn = cv2.minAreaRect(ptrn_cnt)
+        x_ptrn = int(rect_ptrn[0][0])
+        y_ptrn = int(rect_ptrn[0][1])
+
         for cnt in contours:
             if first == 1:        # First contour encompasses entire image
                 first = 0
@@ -351,6 +357,11 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         dir_ptrn_flag = 1
                         img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
                         cv2.imwrite('image_copy.png',image_copy)  
+                        # Adding text on pattern image
+                        img_ptrn = cv2.imread('patterns_overview.png')
+                        image_tmp = img_ptrn.copy()
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=5, color=(0,0,0), thickness=3)
+                        cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
                 elif h/w > slender_rat:
@@ -360,6 +371,11 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         dir_ptrn_flag = 1
                         img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
                         cv2.imwrite('image_copy.png',image_copy) 
+                        # Adding text on pattern image
+                        img_ptrn = cv2.imread('patterns_overview.png')
+                        image_tmp = img_ptrn.copy()
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=5, color=(0,0,0), thickness=3)
+                        cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
         
