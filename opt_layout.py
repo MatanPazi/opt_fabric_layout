@@ -42,6 +42,7 @@ desired_layers = [Direction_Layer,Pattern_Layer]
 # To deal with pdfs with multiple pages:
     # Consider first seperating pdf pages to independent pdf files and running the func pdfLayers on each pdf file.
     # Need to change pdf naming to include page #.
+    # See reference: https://pikepdf.readthedocs.io/en/latest/topics/pages.html
 pdfLayers(pdf_name, pdf_out, desired_layers)
 
 size = pdf2image(desired_layers, pdf_out, img_out)
