@@ -25,14 +25,14 @@ A0_Height = 1189
 # Made relevant changes.
 def pdfLayers(pdf_name, pdf_out, desired_layers):
     """
-    Extract relevant PDF layers  \n
+    Extract relevant PDF pages and layers and saves them as individual pdf files   \n
     Args:
         pdf_name - the main pdf file, e.g: 'main_pdf.pdf' \n
         pdf_out - format to save the pdf files, e.g: 'Out_{num}.pdf' \n
         desired_layers - layers to extract from the main pdf file \n
  
     Returns:
-        void, saves the desired layers as pdf files in pdf_out format.
+        number of pages in inputted pdf file.
     """
     # check if we even have some OCGs
     pdf = pikepdf.open(pdf_name)
@@ -43,15 +43,12 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
         print("Unable to locate layers in PDF.")
         sys.exit(1)
 
-    num_of_layers = len(layers)
+    # num_of_layers = len(layers)
     page_count = len(pdf.pages)
     pdf.close()
 
     # (hopefully) all pdf operators which "display" anything. everything else is styling, which we need to preserve
     hidden_operators = ["S", "s", "f" "F", "f*", "B", "B*", "b", "b*", "n", "Do", "sh", "Tj", "TJ", "m", "l", "c", "v", "y", "h", "re"]
-
-    
-    
 
     for i in range(page_count):
         end_reached = False
@@ -98,11 +95,12 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
                 page.Contents = pdf.make_stream(pikepdf.unparse_content_stream(commands))
                 # pdf.save(sys.argv[2].format(num=cur_layer))
                 if (cur_layer in desired_layers):
-                    pdf.save(pdf_out.format(num=cur_layer))                
+                    pdf.save(pdf_out.format(page_num = i, layer_num=cur_layer))                
                     
                 cur_layer += 1
+    return page_count
 
-def pdf2image(desired_layers, pdf_out, img_out):
+def pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count):
     """
     Save each given pdf as an image  \n
     Args:
@@ -115,15 +113,28 @@ def pdf2image(desired_layers, pdf_out, img_out):
     """
     # path = os.path.realpath(os.path.dirname(__file__))
     path = os.getcwd()
+    
+    for k in range(page_count):
+        # Store Pdf with convert_from_path function
+        for j in range(len(desired_layers)):
+            pdf_path = path + '/' + pdf_out.format(page_num = k, layer_num=desired_layers[j])
+            images = convert_from_path(pdf_path, dpi=150)
+            # image.save(str(desired_layers[j]) +'.jpg', 'JPEG')
+            for i in range(len(images)):        
+                # Save pages as images in the pdf
+                images[i].save(path + '/' + img_out_init.format(page_num = k, layer_num=desired_layers[j]), 'PNG')
+    
+    for i in range(len(desired_layers)):
+        for k in range(page_count):        
+            if k == 0:
+                image = cv2.imread(img_out_init.format(page_num = k, layer_num=desired_layers[i]))
+            else:
+                img_temp = cv2.imread(img_out_init.format(page_num = k, layer_num=desired_layers[i]))
+                image = cv2.vconcat([image, img_temp])
+        cv2.imwrite(img_out.format(num = i),image)
 
-    # Store Pdf with convert_from_path function
-    for j in range(len(desired_layers)):
-        pdf_path = path + '/' + pdf_out.format(num=desired_layers[j])
-        images = convert_from_path(pdf_path, dpi=150)
-        # image.save(str(desired_layers[j]) +'.jpg', 'JPEG')
-        for i in range(len(images)):        
-            # Save pages as images in the pdf
-            images[i].save(path + '/' + img_out.format(num=desired_layers[j]), 'PNG')
+
+
     img = cv2.imread(img_out.format(num=desired_layers[0]))
     return img.shape
 
