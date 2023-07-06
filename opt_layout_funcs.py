@@ -50,11 +50,13 @@ def pdfLayers(pdf_name, pdf_out, desired_layers):
     # (hopefully) all pdf operators which "display" anything. everything else is styling, which we need to preserve
     hidden_operators = ["S", "s", "f" "F", "f*", "B", "B*", "b", "b*", "n", "Do", "sh", "Tj", "TJ", "m", "l", "c", "v", "y", "h", "re"]
 
-    extracted_groups = []
-    cur_layer = 0
+    
+    
 
     for i in range(page_count):
         end_reached = False
+        extracted_groups = []
+        cur_layer = 0
 
         while not end_reached:
             commands = []
