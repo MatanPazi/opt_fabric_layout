@@ -44,6 +44,10 @@ desired_layers = [Direction_Layer,Pattern_Layer]
     # Consider first seperating pdf pages to independent pdf files and running the func pdfLayers on each pdf file.
     # Need to change pdf naming to include page #.
     # See reference: https://pikepdf.readthedocs.io/en/latest/topics/pages.html
+    # OR
+    # Consider saving a layer along all pages (several pages 1 layer)
+    # And then converting the pages to images, see example:
+    # https://stackoverflow.com/questions/62161218/lost-information-getting-pdf-page-as-image
 page_count = pdfLayers(pdf_name, pdf_out, desired_layers)
 
 size = pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count)
