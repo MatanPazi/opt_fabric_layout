@@ -38,7 +38,12 @@ ptrn_imgs = 'pattern_{num}.png'
 desired_layers = [Direction_Layer,Pattern_Layer]
 
 # Extraction section
+
+# To deal with pdfs with multiple pages:
+    # Consider first seperating pdf pages to independent pdf files and running the func pdfLayers on each pdf file.
+    # Need to change pdf naming to include page #.
 pdfLayers(pdf_name, pdf_out, desired_layers)
+
 size = pdf2image(desired_layers, pdf_out, img_out)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer), False)
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
