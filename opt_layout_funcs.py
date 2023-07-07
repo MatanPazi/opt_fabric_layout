@@ -128,7 +128,7 @@ def pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count):
             # Iterate over each page of the PDF
             for i, page in enumerate(pdf_file):
                 # Render the page as a pixmap
-                pix = page.get_pixmap()
+                pix = page.get_pixmap(dpi = 150)
 
                 # Save the pixmap as PNG image
                 pix.save(path + '/' + img_out_init.format(page_num = k, layer_num=desired_layers[j]), 'PNG')
