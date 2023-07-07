@@ -339,6 +339,9 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     dir_ptrn_flag = 0
     for ptrn_cnt in ptrn_cntrs:
         img_tmp = img.copy()
+        img_debug = img.copy()
+        cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        cv2.imwrite('img_debug.png',img_debug) 
         img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0)    
         img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
