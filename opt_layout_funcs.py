@@ -15,6 +15,8 @@ import platform
 from matplotlib import pyplot as plt
 import random
 from scipy import optimize
+import fitz
+
 
 # Global params
 A0_Width  = 841
@@ -113,16 +115,23 @@ def pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count):
     """
     # path = os.path.realpath(os.path.dirname(__file__))
     path = os.getcwd()
+    # os.makedirs(output_folder, exist_ok=True)
     
     for k in range(page_count):
         # Store Pdf with convert_from_path function
         for j in range(len(desired_layers)):
             pdf_path = path + '/' + pdf_out.format(page_num = k, layer_num=desired_layers[j])
-            images = convert_from_path(pdf_path, dpi=150)
-            # image.save(str(desired_layers[j]) +'.jpg', 'JPEG')
-            for i in range(len(images)):        
-                # Save pages as images in the pdf
-                images[i].save(path + '/' + img_out_init.format(page_num = k, layer_num=desired_layers[j]), 'PNG')
+
+            # Open the PDF file
+            pdf_file = fitz.open(pdf_path)
+
+            # Iterate over each page of the PDF
+            for i, page in enumerate(pdf_file):
+                # Render the page as a pixmap
+                pix = page.get_pixmap()
+
+                # Save the pixmap as PNG image
+                pix.save(path + '/' + img_out_init.format(page_num = k, layer_num=desired_layers[j]), 'PNG')
     
     for i in range(len(desired_layers)):
         for k in range(page_count):        
@@ -131,7 +140,7 @@ def pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count):
             else:
                 img_temp = cv2.imread(img_out_init.format(page_num = k, layer_num=desired_layers[i]))
                 image = cv2.vconcat([image, img_temp])
-        cv2.imwrite(img_out.format(num = i),image)
+        cv2.imwrite(img_out.format(num = desired_layers[i]),image)
 
 
 
@@ -570,7 +579,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     return copies_list, lining_list, main_fabric_list, fold_list, dir_cnt
 
 
-def fold_patterns(fold_list, pattern_img, rot_ang, size):
+def fold_patterns(fold_list, pattern_img, rot_ang, size, page_count):
     """
     Folds the pattern images based on the given fold list \n
     copies images to larger blank images for easier later manipulation \n
@@ -586,10 +595,10 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size):
     """
     # Dependent on original image orientation:
     if size[0] > size[1]:       # Portrait
-        resize_y = A0_Height / size[0]
+        resize_y = page_count * A0_Height / size[0]
         resize_x = A0_Width / size[1]
     else:                       # Landscape
-        resize_y = A0_Width / size[0]
+        resize_y = page_count * A0_Width / size[0]
         resize_x = A0_Height / size[1]
 
     for i in range(len(fold_list)):
