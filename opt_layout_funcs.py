@@ -22,6 +22,7 @@ import fitz
 A0_Width  = 841
 A0_Height = 1189    
 
+
 # Extract relevant PDF layers
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
 # Made relevant changes.
@@ -441,7 +442,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         rot_ang.append(angle)
         img = img1.copy()
         
-        kernel_size = int(img0.shape[0]*img0.shape[1] * 0.0000002 + 0.5)
+        kernel_size = int(img0.shape[0]*img0.shape[1] * 0.0000002 + 0.5)    # Empiric formula. Might need to change in the future.
         if kernel_size < 1:
             kernel_size = 3
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
@@ -525,8 +526,13 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     else:
         pytesseract.tesseract_cmd=r'/usr/bin/tesseract'    
-    img0 = cv2.imread(image)
+    img0 = cv2.imread(image)    
     ang_inc = 90
+    # All possible values of copies
+    cut_num_txt = ['cut two', 'cut 2', 'cut2', 'cut four', 'cut 4', 'cut4']
+    cut_2 = cut_num_txt[0:3]
+    cut_4 = cut_num_txt[3:6]
+
     copies_list = []
     lining_list = []
     main_fabric_list = []
@@ -569,8 +575,15 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
             text = (pytesseract.image_to_string(img)).lower()            
             ## For debugging
             # print(text[:-1])                                    #print the text line by line
-            if 'cut two' in text or 'cut 2' in text:
-                copies = 2
+            # if # of copies indicated:
+            for string in cut_2:
+                if string in text:
+                    copies = 2
+                    continue
+            for string in cut_4:
+                if string in text:
+                    copies = 4
+                    continue
             if 'lining' in text:
                 lining = 1
                 if 'main fabric' not in text:
@@ -864,7 +877,7 @@ def first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs):
 
     return y_min, x_min, max_area_index
 
-def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
+def opt_place(copies, ptrn_imgs, fabric_width):
     """
     Run optimization
     Args:
@@ -875,6 +888,8 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     Returns:
         void
     """   
+    num_of_ptrns = len(copies)
+    num_of_copies = sum(copies)
     # First pattern placement
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 0, 0, 0)
     main_poly_ind = []
@@ -899,17 +914,16 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
     image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=2, color=(255,255,0), thickness=3)
     cv2.imwrite('opt_res.png',image)
 
-    main_array_copy = main_array.copy()
     opts = {'disp': False, 'maxiter': 50, 'fatol': 1e-10}
-    for k in range(num_of_ptrns):
+    for k in range(num_of_copies):
         print(k)
         main_array_init = main_array.copy()   
         min = 1e10
         index_min_val = 0
         for i in range(num_of_ptrns):
-            if i in main_poly_ind:
+            if (i in main_poly_ind) and (main_poly_ind.count(i) == copies(i)):      # Taking number of copies into account.
                 continue
-            for invert in range(1):
+            for invert in range(2):
                 arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, invert, 1)            
                 cost_min = 1e10
                 for p in range(len(main_poly_pts)):
