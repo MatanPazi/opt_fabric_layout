@@ -56,18 +56,14 @@ potential_dir_contours, potential_contour_pattern, pattern_contours = find_poten
 copies, lining, main_fabric, fold, dir_cnt = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern)
 rotation_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
 fold_patterns(fold, ptrn_imgs, rotation_angles, size, page_count)
-## For debugging
-# gen_array(ptrn_imgs, len(pattern_contours), False)
 
 # Optimization section
 fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
-# main_array = init_main_arr(Fabric_width, len(copies), ptrn_imgs)
-opt_place(len(copies), ptrn_imgs, fabric_width)
+opt_place(copies, ptrn_imgs, fabric_width)
 
 
 '''
 TODO:
 1. Support copies
-2. Support 180 rotation for each pattern
-3. Support legends (E.g 9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf pattern)
+2. Support legends (E.g 9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf pattern)
 '''
