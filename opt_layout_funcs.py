@@ -2,8 +2,6 @@
 # #!/usr/bin/env python3
 import sys
 import pikepdf
-from PIL import Image
-import PIL.ImageOps    
 from pdf2image import convert_from_path
 import os
 import cv2
@@ -719,6 +717,8 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     """    
     img0 = cv2.imread(ptrn_imgs.format(num=ptrn_num))
     img = img0.copy()
+    if inv:
+        img = cv2.flip(img, 1)      # Flip horizontally
     cv2.imwrite('image_copy.png',img)
     cntr = find_pattern_contours('image_copy.png', True)
     cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
@@ -778,16 +778,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
                     arr.itemset((i,j), 1.0)
                 else:   #Outisde contour
                     arr.itemset((i,j), 1.0)
-    # if config == 1:
-    #     arr = (max_dist + arr) / max_dist
-    if inv:
-        arr = np.rot90(arr, 2)
-    ## For debugging
-  
-    # arr = np.rot90(arr, 2)
-    # plt.imshow(arr.T, interpolation='none')
-    # plt.waitforbuttonpress()   
-    
+
     if config == 0:
         return arr.T
     else:
@@ -921,7 +912,7 @@ def opt_place(copies, ptrn_imgs, fabric_width):
         min = 1e10
         index_min_val = 0
         for i in range(num_of_ptrns):
-            if (i in main_poly_ind) and (main_poly_ind.count(i) == copies(i)):      # Taking number of copies into account.
+            if (i in main_poly_ind) and (main_poly_ind.count(i) == copies[i]):      # Taking number of copies into account.
                 continue
             for invert in range(2):
                 arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, invert, 1)            
@@ -965,7 +956,7 @@ def opt_place(copies, ptrn_imgs, fabric_width):
                 center_y_min = int(center_y_temp)
                 center_x_min = int(center_x_temp)
         
-        if (len(main_poly_ind) < num_of_ptrns):
+        if (len(main_poly_ind) < num_of_copies):
             for n in range(len(aprox_cnt_min)): # Changing to (y,x) from (x,y) format
                 tempx = aprox_cnt_min[n][0][0]
                 aprox_cnt_min[n][0][0] = aprox_cnt_min[n][0][1]
