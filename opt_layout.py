@@ -28,9 +28,9 @@ import glob
 # pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
 
 # Made up of more than 1 page, need to handle differently...
-Direction_Layer = 3
-Pattern_Layer = 4
-pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+# Direction_Layer = 1
+# Pattern_Layer = 3
+# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 pdf_out = 'Page_{page_num}_Layer_{layer_num}.pdf'
 img_out_init = 'Page_{page_num}_Layer_{layer_num}.png'
