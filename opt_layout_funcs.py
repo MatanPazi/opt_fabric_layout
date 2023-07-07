@@ -909,23 +909,24 @@ def opt_place(num_of_ptrns, ptrn_imgs, fabric_width):
         for i in range(num_of_ptrns):
             if i in main_poly_ind:
                 continue
-            arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, False, 1)            
-            cost_min = 1e10
-            for p in range(len(main_poly_pts)):
-                for j in range(len(main_poly_pts[p])):
-                    y = main_poly_pts[p][j][0][0] - center_y
-                    x = main_poly_pts[p][j][0][1] - center_x                    
-                    init_pos = [y,x]
-                    ## Maniuplate x and y simultaneously:                
-                    res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
-                    y = res.x[0]
-                    x = res.x[1]
-                    cost = res.fun
-                    if cost_min > cost:
-                        cost_min = cost
-                        res_min = res
-                        center_y_temp = y + center_x
-                        center_x_temp = x + center_y
+            for invert in range(1):
+                arr, aprox_cnt, center_x, center_y, max_dist = gen_array(ptrn_imgs, i, invert, 1)            
+                cost_min = 1e10
+                for p in range(len(main_poly_pts)):
+                    for j in range(len(main_poly_pts[p])):
+                        y = main_poly_pts[p][j][0][0] - center_y
+                        x = main_poly_pts[p][j][0][1] - center_x                    
+                        init_pos = [y,x]
+                        ## Maniuplate x and y simultaneously:                
+                        res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                        y = res.x[0]
+                        x = res.x[1]
+                        cost = res.fun
+                        if cost_min > cost:
+                            cost_min = cost
+                            res_min = res
+                            center_y_temp = y + center_x
+                            center_x_temp = x + center_y
 
             if res_min.x[0] < 0:
                 res_min.x[0] = 0
