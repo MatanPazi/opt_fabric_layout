@@ -55,7 +55,7 @@ pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer), Fals
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 copies, lining, main_fabric, fold, dir_cnt = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern)
 rotation_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
-fold_patterns(fold, ptrn_imgs, rotation_angles, size)
+fold_patterns(fold, ptrn_imgs, rotation_angles, size, page_count)
 ## For debugging
 # gen_array(ptrn_imgs, len(pattern_contours), False)
 
