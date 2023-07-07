@@ -13,9 +13,9 @@ import glob
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
 
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'bt67-A0-pattern.pdf'
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
@@ -64,19 +64,10 @@ fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
 # main_array = init_main_arr(Fabric_width, len(copies), ptrn_imgs)
 opt_place(len(copies), ptrn_imgs, fabric_width)
 
-# TODO:
-# The function gen_array should also return the approx polygon created and the center of gravity (Reference point).
-    # In the future, can make sure the distance between points in the approx polygon aren't bigger than 50(?) pixels (Make it a configurable parameter).
-        # Since the patterns are going to go point by point, so don't want to miss to much area.
 
-
-# Place first pattern according to least amount of waste (Choose according to largest area for now, to be improved in the future)
-# Next, each pattern's reference point is set to be on each of the previous pattern's polygon points.
-# After each reference point placement, a minimization algo should run to move the added pattern from inside the other patterns (Preventing overlap).
-    # Each pixel inside the pattern arrays will equal to the distance from the pattern edge (min on x and y distances), 0 on the contour edges.
-    # The cost func will return the sum of the area covered by the added pattern divided by the sum of the added pattern.
-    # So the pattern will strive to be outside the other patterns where the values are 1(?)
-# The lowest cost returned will be the optimal placement of that pattern.
-
-# Go over rest of patterns one by one and check which had the lowest cost.
-# In the future, can rule out points if there's no way the pattern can go there. Will reduce calc time.
+'''
+TODO:
+1. Support copies
+2. Support 180 rotation for each pattern
+3. Support legends (E.g 9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf pattern)
+'''
