@@ -310,7 +310,7 @@ def find_pattern_contours(image, resized):
         else:             
             j += 1
         counter += 1
-    # For debugging
+    ## For debugging
     if not resized:
         image_copy = img.copy()
         cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
@@ -339,9 +339,10 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     dir_ptrn_flag = 0
     for ptrn_cnt in ptrn_cntrs:
         img_tmp = img.copy()
-        img_debug = img.copy()
-        cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
-        cv2.imwrite('img_debug.png',img_debug) 
+        ## For debugging
+        # img_debug = img.copy()
+        # cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+        # cv2.imwrite('img_debug.png',img_debug) 
         img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0)    
         img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
@@ -350,7 +351,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         slender_rat = 3
         min_width = 10
         max_width = 120
-        min_len = 150
+        min_len = 120
         first = 1
         image_copy = img_cropped.copy()
         cv2.imwrite('image_copy.png',image_copy) 
