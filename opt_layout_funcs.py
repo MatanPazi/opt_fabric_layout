@@ -923,7 +923,10 @@ def opt_place(copies, ptrn_imgs, fabric_width):
                         x = main_poly_pts[p][j][0][1] - center_x                    
                         init_pos = [y,x]
                         ## Maniuplate x and y simultaneously:                
-                        res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr), method='Nelder-Mead', options=opts)
+                        debug = 0
+                        # if i == 3:
+                        #     debug = 1
+                        res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr, debug), method='Nelder-Mead', options=opts)
                         y = res.x[0]
                         x = res.x[1]
                         cost = res.fun
@@ -1050,25 +1053,31 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
 
 
 
-def cost_func_NFP(pos, main_array, arr):
+def cost_func_NFP(pos, main_array, arr, debug):
     y_pos = int(pos[0])
     x_pos = int(pos[1])
-    main_arr_len = y_pos+arr.shape[0]
-    main_arr_wid = x_pos+arr.shape[1]    
+    main_arr_len = y_pos + arr.shape[0]
+    main_arr_wid = x_pos + arr.shape[1]    
     cost = 0
     if y_pos < 0:
-        cost += abs(y_pos)
+        cost += abs(y_pos)/arr.shape[0]
 
     if y_pos > (main_array.shape[0] - arr.shape[0]):
-        cost += (y_pos + arr.shape[0] - main_array.shape[0])
+        cost += (y_pos + arr.shape[0] - main_array.shape[0])/main_array.shape[0]
 
     if x_pos < 0:
-        cost += abs(x_pos)
+        cost += abs(x_pos)/main_array.shape[1]
 
     if x_pos > (main_array.shape[1] - arr.shape[1]):
-        cost += (x_pos + arr.shape[1] - main_array.shape[1])
+        cost += (x_pos + arr.shape[1] - main_array.shape[1])/main_array.shape[1]
     
     if cost != 0:
+        # if debug:
+        #     plt.title(cost)
+        #     plt.text(500,500,x_pos, fontsize=12)
+        #     plt.text(600,600,y_pos, fontsize=12)
+        #     plt.imshow(main_array, interpolation='none')
+        #     plt.waitforbuttonpress()
         return cost
 
 
@@ -1081,8 +1090,14 @@ def cost_func_NFP(pos, main_array, arr):
         cost = 1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum())
     if cost < 0:
         cost *= -100
-    cost *= (1 + (x_pos / main_arr_copy.shape[1]))
-    shape = (arr.shape[0], arr.shape[1])
-    arr_demo = 10*np.ones(shape)
-    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr_demo
+    cost *= (1 + (x_pos/main_array.shape[1]))
+    
+    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
+    # if debug:
+    #     plt.title(cost)
+    #     plt.text(500,500,x_pos, fontsize=12)
+    #     plt.text(600,600,y_pos, fontsize=12)
+    #     plt.imshow(main_arr_copy, interpolation='none')
+    #     plt.waitforbuttonpress()
+
     return cost 
