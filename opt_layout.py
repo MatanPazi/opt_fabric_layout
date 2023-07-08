@@ -13,9 +13,9 @@ import glob
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
 
-Direction_Layer = 0
-Pattern_Layer = 1
-pdf_name = 'bt67-A0-pattern.pdf'
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
@@ -27,10 +27,11 @@ pdf_name = 'bt67-A0-pattern.pdf'
 # Pattern_Layer = 9
 # pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
 
-# Made up of more than 1 page, need to handle differently...
-# Direction_Layer = 1
-# Pattern_Layer = 3
-# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+# Made up of 2 pages
+# This pattern not working well. Need to debug.
+Direction_Layer = 1
+Pattern_Layer = 3
+pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 pdf_out = 'Page_{page_num}_Layer_{layer_num}.pdf'
 img_out_init = 'Page_{page_num}_Layer_{layer_num}.png'
