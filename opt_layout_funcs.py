@@ -660,6 +660,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
     for i in range(len(fold_list)):
         if fold_list[i] != 0:            
             flip_code = -1
+            invert = 0
             for j in range(len(fold_list[i])):
                 ptrn_img = cv2.imread(pattern_img.format(num = i))
                 img = ptrn_img.copy()
@@ -671,8 +672,11 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 y = rect[0][1]
                 w = rect[1][0]
                 h = rect[1][1]
-                theta = rect[2] - rot_ang[i]        # Rotated the pattern after fold_list was filled, so subtracting the rotated angles. Shitty solution but should work for now.
-                if theta < min_rot_ang:
+                angle = rect[2] + rot_ang[i] - 90   # Rotated the pattern after fold_list was filled, so subtracting the rotated angles. Shitty solution but should work for now.
+                if angle >= 90:
+                    angle -= 90    
+                    invert = 1
+                if angle < min_rot_ang:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.
                             break
@@ -691,7 +695,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
-                else: #theta > (min_rot_ang - 90)
+                else: #angle > (90 - min_rot_ang)
                     if w > h:
                         if flip_code == 1:
                             break
@@ -713,12 +717,12 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                     
                 img_flipped = cv2.flip(img, flip_code)
                 if flip_code == 0:
-                    if flip_side == 'up':
+                    if ((flip_side == 'up') and (invert == 0)) or ((flip_side == 'down') and (invert == 1)):
                         stitched_img = cv2.vconcat([img_flipped, img])
                     else:
                         stitched_img = cv2.vconcat([img, img_flipped])
                 else:
-                    if flip_side == 'left':
+                    if ((flip_side == 'left') and (invert == 0)) or ((flip_side == 'right') and (invert == 1)):
                         stitched_img = cv2.hconcat([img_flipped, img])
                     else:
                         stitched_img = cv2.hconcat([img, img_flipped])
@@ -730,6 +734,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
         blank[:] = 255
         blank[ptrn_img.shape[0]:ptrn_img.shape[0]*2, ptrn_img.shape[1]:ptrn_img.shape[1]*2] = ptrn_img
         cv2.imwrite(pattern_img.format(num = i), blank)                
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
         kernel = np.ones((7, 7), np.uint8)
         ptrn_img = cv2.erode(ptrn_img, kernel, iterations=1)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
