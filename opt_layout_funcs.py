@@ -453,12 +453,13 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
     """
     img0 = cv2.imread(ptrn_image)
     cv2.imwrite('img_test.png',img0)
+    rot_ang = []
     for i in range(len(pattern_contours)):
         img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
         cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
         ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img)
-        
+        rot_ang.append(ang)
 
         cv2.imwrite(pattern_img.format(num = i), img1)
         ptrn_img = cv2.imread(pattern_img.format(num = i))
@@ -469,10 +470,12 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         ptrn_img = cv2.imread(pattern_img.format(num = i))
         ptrn_img = imutils.rotate_bound(ptrn_img, angle = ang)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
-        ptrn_cntr = find_pattern_contours(pattern_img.format(num = i), 2)
+        img_temp = ptrn_img.copy()
+        cv2.imwrite('img_temp.png',img_temp)
+        ptrn_cntr = find_pattern_contours('img_temp.png', 2)
         # computing the bounding rectangle of the contour
         x, y, w, h = cv2.boundingRect(ptrn_cntr[0])
-        ptrn_img = cv2.rectangle(ptrn_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        # ptrn_img = cv2.rectangle(ptrn_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         cv2.imwrite('img_test.png',ptrn_img)
         img_cropped_temp = ptrn_img[y : y+h, x: x+w]
         cv2.imwrite('img_test.png',img_cropped_temp)
@@ -537,6 +540,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
 
         img_cropped = img_cropped_temp[y_min : y_max, x_min: x_max]                   
         cv2.imwrite(pattern_img.format(num=i),img_cropped) 
+    return rot_ang
     
 
 
@@ -631,7 +635,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     return copies_list, lining_list, main_fabric_list, fold_list, dir_cnt
 
 
-def fold_patterns(fold_list, pattern_img, size, page_count):
+def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
     """
     Folds the pattern images based on the given fold list \n
     copies images to larger blank images for easier later manipulation \n
@@ -667,7 +671,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count):
                 y = rect[0][1]
                 w = rect[1][0]
                 h = rect[1][1]
-                theta = rect[2] 
+                theta = rect[2] - rot_ang[i]        # Rotated the pattern after fold_list was filled, so subtracting the rotated angles. Shitty solution but should work for now.
                 if theta < min_rot_ang:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.

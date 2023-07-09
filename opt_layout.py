@@ -55,8 +55,8 @@ size = pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer), False)
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 copies, lining, main_fabric, fold, dir_cnt = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern)
-save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
-fold_patterns(fold, ptrn_imgs, size, page_count)
+rot_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
+fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles)
 
 # Optimization section
 fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
