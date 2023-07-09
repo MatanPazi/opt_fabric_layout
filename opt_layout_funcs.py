@@ -15,7 +15,6 @@ import random
 from scipy import optimize
 import fitz
 
-
 # Global params
 A0_Width  = 841
 A0_Height = 1189    
@@ -168,12 +167,16 @@ def draw_angled_rec(x0, y0, width, height, angle, img, color):
         cv2.line(img, pt1, pt2, (0, 255, 0), 5)
         cv2.line(img, pt2, pt3, (0, 255, 0), 5)
         cv2.line(img, pt3, pt0, (0, 255, 0), 5)
-    else:
+    elif color == 'red':
         cv2.line(img, pt0, pt1, (0, 0, 255), 5)
         cv2.line(img, pt1, pt2, (0, 0, 255), 5)
         cv2.line(img, pt2, pt3, (0, 0, 255), 5)
         cv2.line(img, pt3, pt0, (0, 0, 255), 5)
-
+    else:
+        cv2.line(img, pt0, pt1, (255, 0, 255), 5)
+        cv2.line(img, pt1, pt2, (255, 0, 255), 5)
+        cv2.line(img, pt2, pt3, (255, 0, 255), 5)
+        cv2.line(img, pt3, pt0, (255, 0, 255), 5)
 
 # Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
 # Made slight changes
@@ -183,7 +186,15 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     center, size, theta = rect
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
-
+    ## For debugging
+    image_copy = image.copy()
+    x = rect[0][0]
+    y = rect[0][1]
+    w = rect[1][0]
+    h = rect[1][1]
+    theta = rect[2]   
+    draw_angled_rec(x, y, w, h, theta, image_copy, 'pink')
+    cv2.imwrite('img_test.png',image_copy)
     # Allow only for angles of rotation lower than 90 degrees.
     # To simplify handling.
     if theta == 90:
@@ -331,13 +342,21 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         ptrn_cntrs_new - The pattern contours which contain direction contours inside them. \n
     """
     img = cv2.imread(image)
+    # Need to blurr direction layer image due to intersecting lines on grainline arrows, causing contour detection to assume the arrow is divided.    
+    img_blurred = img.copy()
+    cv2.imwrite('image_copy.png',img_blurred)
+    kernel_size = 3
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    img_blurred = cv2.erode(img_blurred, kernel, iterations=2)
+    img_blurred = cv2.dilate(img_blurred, kernel, iterations=2)
+    cv2.imwrite('image_copy.png',img_blurred)
     ptrn_cnt_counter = 0
     potential_contours = []
     potential_contours_ptrn_index = []
     ptrn_cntrs_new = []
     dir_ptrn_flag = 0
     for ptrn_cnt in ptrn_cntrs:
-        img_tmp = img.copy()
+        img_tmp = img_blurred.copy()
         ## For debugging
         # img_debug = img.copy()
         # cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
