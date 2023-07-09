@@ -18,6 +18,8 @@ import fitz
 # Global params
 A0_Width  = 841
 A0_Height = 1189    
+min_rot_ang = 3
+
 
 
 # Extract relevant PDF layers
@@ -217,12 +219,11 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
             width, height = height, width   
             
     if type == 'ang_rtrn':
-        allowed_ang = 3
-        if alpha < allowed_ang:
-            alpha = 0
-        elif alpha > (90-allowed_ang):
-            if (abs(alpha - 90) < allowed_ang and (alpha != 90)):
-                alpha = 90
+        # if alpha < min_rot_ang:
+        #     alpha = 0
+        # elif alpha > (90-min_rot_ang):
+        #     if (abs(alpha - 90) < min_rot_ang and (alpha != 90)):
+        #         alpha = 90
         return alpha
     
     x_old = int(center[0])
@@ -275,12 +276,12 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
 
 
 # Find the pattern contours
-def find_pattern_contours(image, resized):
+def find_pattern_contours(image, type):
     """
     Finds the pattern contours  \n
     Args:
         image - pattern contour image format to read \n        
-        resized - bool, whether the image was resized to A0 or not, determines kernel size.
+        type - bool, whether the image was resized to A0 or not, determines kernel size.
         
     Returns:
         The detected pattern contours
@@ -288,7 +289,7 @@ def find_pattern_contours(image, resized):
     counter = 0
     img = cv2.imread(image)
         
-    if resized:
+    if type == 1:
         kernel_size = 3
     else:
         kernel_size = 7
@@ -300,11 +301,13 @@ def find_pattern_contours(image, resized):
     # of iterations, which will determine how much
     # you want to erode/dilate a given image.
     img = cv2.erode(img, kernel, iterations=6)
+    cv2.imwrite('img_test.png', img)
     img = cv2.dilate(img, kernel, iterations=3)
+    cv2.imwrite('img_test.png', img)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
-    contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)                                            
+    contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)                                             
     good_contours = []
     j = 0
     for cnt in contours:
@@ -321,7 +324,7 @@ def find_pattern_contours(image, resized):
             j += 1
         counter += 1
     ## For debugging
-    if not resized:
+    if type == 0:
         image_copy = img.copy()
         cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
         cv2.imwrite('patterns_overview.png',image_copy) 
@@ -435,7 +438,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     return potential_contours, potential_contours_ptrn_index, ptrn_cntrs_new
 
 
-def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs):
+def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_img):
     """
     Crops and saves the pattern contours images before being folded \n
     Args:
@@ -450,18 +453,39 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
     """
     img0 = cv2.imread(ptrn_image)
     cv2.imwrite('img_test.png',img0)
-    rot_ang = []
     for i in range(len(pattern_contours)):
         img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
         cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
-        angle = crop_image(cnt, img1, 'ang_rtrn', i, ptrn_imgs)
-        rot_ang.append(angle)
-        img = img1.copy()        
+        ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img)
+        
+
+        cv2.imwrite(pattern_img.format(num = i), img1)
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
+        blank = np.zeros((ptrn_img.shape[0] * 3,ptrn_img.shape[1] * 3, 3), dtype=np.uint8)
+        blank[:] = 255
+        blank[ptrn_img.shape[0]:ptrn_img.shape[0]*2, ptrn_img.shape[1]:ptrn_img.shape[1]*2] = ptrn_img
+        cv2.imwrite(pattern_img.format(num = i), blank)  
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
+        ptrn_img = imutils.rotate_bound(ptrn_img, angle = ang)
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
+        ptrn_cntr = find_pattern_contours(pattern_img.format(num = i), 2)
+        # computing the bounding rectangle of the contour
+        x, y, w, h = cv2.boundingRect(ptrn_cntr[0])
+        ptrn_img = cv2.rectangle(ptrn_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.imwrite('img_test.png',ptrn_img)
+        img_cropped_temp = ptrn_img[y : y+h, x: x+w]
+        cv2.imwrite('img_test.png',img_cropped_temp)
+        
+        
+        
+        img = img_cropped_temp.copy()        
         kernel_size = 3
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
-        img = cv2.erode(img, kernel, iterations=2)
-        img = cv2.dilate(img, kernel, iterations=2)
+        img = cv2.erode(img, kernel, iterations=1)
+        cv2.imwrite('img_test.png',img)
+        img = cv2.dilate(img, kernel, iterations=1)
+        cv2.imwrite('img_test.png',img)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(img_gray, 230, 255, cv2.THRESH_BINARY)                
         x_min = img.shape[1]
@@ -489,7 +513,6 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
                 if min_val[0][1] < y_min:
                     y_min = int(min_val[0][1])
         
-        # px_buffer = int(1.5 + img0.shape[1] / A0_Width) * 30
         px_buffer = 0
 
         if img.shape[0] - y_max < px_buffer:
@@ -512,9 +535,8 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, ptrn_imgs
         else:
             x_min -= px_buffer        
 
-        img_cropped = img1[y_min : y_max, x_min: x_max]
-        cv2.imwrite(ptrn_imgs.format(num=i),img_cropped) 
-    return rot_ang
+        img_cropped = img_cropped_temp[y_min : y_max, x_min: x_max]                   
+        cv2.imwrite(pattern_img.format(num=i),img_cropped) 
     
 
 
@@ -609,7 +631,7 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
     return copies_list, lining_list, main_fabric_list, fold_list, dir_cnt
 
 
-def fold_patterns(fold_list, pattern_img, rot_ang, size, page_count):
+def fold_patterns(fold_list, pattern_img, size, page_count):
     """
     Folds the pattern images based on the given fold list \n
     copies images to larger blank images for easier later manipulation \n
@@ -646,7 +668,7 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size, page_count):
                 w = rect[1][0]
                 h = rect[1][1]
                 theta = rect[2] 
-                if theta == 0:
+                if theta < min_rot_ang:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.
                             break
@@ -665,7 +687,7 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size, page_count):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
-                else: #theta == 90
+                else: #theta > (min_rot_ang - 90)
                     if w > h:
                         if flip_code == 1:
                             break
@@ -703,10 +725,7 @@ def fold_patterns(fold_list, pattern_img, rot_ang, size, page_count):
         blank = np.zeros((ptrn_img.shape[0] * 3,ptrn_img.shape[1] * 3, 3), dtype=np.uint8)
         blank[:] = 255
         blank[ptrn_img.shape[0]:ptrn_img.shape[0]*2, ptrn_img.shape[1]:ptrn_img.shape[1]*2] = ptrn_img
-        cv2.imwrite(pattern_img.format(num = i), blank)
-        ptrn_img = cv2.imread(pattern_img.format(num = i))
-        ptrn_img = imutils.rotate_bound(ptrn_img, angle = rot_ang[i])
-        cv2.imwrite(pattern_img.format(num = i), ptrn_img)        
+        cv2.imwrite(pattern_img.format(num = i), blank)                
         kernel = np.ones((7, 7), np.uint8)
         ptrn_img = cv2.erode(ptrn_img, kernel, iterations=1)
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
