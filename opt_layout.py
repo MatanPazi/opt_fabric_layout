@@ -1,5 +1,37 @@
 from opt_layout_funcs import *
 import glob
+from tkinter import *
+
+
+def get_vals():    
+    for i in range(num_of_ptrns):
+        if cbVariables[i].get() == 1:
+            ptrn_list.append(i)
+    root.destroy()
+
+def gui_choose_patterns():
+    cbTexts={}    
+    cb={}
+
+    Label(root, text="""Choose the patterns you wish to optimize""", justify = LEFT, padx = 20).pack()
+    
+    for i in range(num_of_ptrns):
+        cbTexts[i] = StringVar()
+        cbTexts[i].set(i)
+        cbVariables[i] = IntVar()
+        # cbVariables[i].set(1)
+        cbVariables[i].set(1)
+        cb[i] = Checkbutton(root, text=cbTexts[i].get(), variable=cbVariables[i])
+        cb[i].pack()
+
+    frame = Frame(root)
+    frame.pack()
+    button = Button(frame, text="Set", fg="red", command=get_vals)
+    button.pack(side=LEFT)
+    
+    mainloop()
+
+
 
 # Direction_Layer = 1
 # Pattern_Layer = 2
@@ -13,9 +45,9 @@ import glob
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
 
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'bt67-A0-pattern.pdf'
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
@@ -29,9 +61,9 @@ import glob
 
 # Made up of 2 pages
 # This pattern not working well. Need to debug.
-Direction_Layer = 1
-Pattern_Layer = 3
-pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+# Direction_Layer = 1
+# Pattern_Layer = 3
+# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 pdf_out = 'Page_{page_num}_Layer_{layer_num}.pdf'
 img_out_init = 'Page_{page_num}_Layer_{layer_num}.png'
@@ -60,7 +92,19 @@ fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles)
 
 # Optimization section
 fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
-opt_place(copies, ptrn_imgs, fabric_width)
+
+# Parameters for GUI
+num_of_ptrns = len(copies)
+# Variables for GUI
+ptrn_list = []
+cbVariables = {}
+root = Tk()
+gui_choose_patterns()
+
+
+
+
+opt_place(copies, ptrn_imgs, fabric_width, ptrn_list)
 
 
 '''
