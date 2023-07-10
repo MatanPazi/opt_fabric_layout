@@ -676,6 +676,9 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 if angle >= 90:
                     angle -= 90    
                     invert = 1
+                if rot_ang[i] < 90:                 # if rot_ang[i] < 90 that means a 90 deg rot happened, and we need to switch height and width
+                    w,h = h,w
+
                 if angle < min_rot_ang:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.
@@ -872,9 +875,10 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
                 dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
                 if dist > 0:    # Outside the contour
                     if dist < main_array[i,j]:  # Min distance 
-                        main_array[i,j] = (max_dist - dist) / max_dist
+                        main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
                 else:
                     main_array[i,j] = 1
+       
     else:   #Subsequent placements
         # TODO: Consider adding to every index x/len or something and removing x_pos from NFP cost function.
         max_dist = math.sqrt(Fabric_width**2 + len**2)
@@ -889,8 +893,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
                     else:
                         main_array[i,j] = 1
     
-    # plt.imshow(main_array, interpolation='none')
-    # plt.waitforbuttonpress() 
+     
     return main_array
 
 def first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs):
@@ -904,24 +907,31 @@ def first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs):
             max_area = arr.size
             max_area_arr = arr
             max_area_index = i    
-    opts = {'disp': False, 'maxiter': 40, 'fatol': 1e-10}
+    opts = {'disp': False, 'maxiter': 30, 'fatol': 1e-10}
     # TODO: Look for min function value based on inverted or not
-    res = optimize.minimize(cost_func, (main_array.shape[0]/2,main_array.shape[1]/2), args=(main_array, main_array.sum(), max_area_arr, 2, 0), method='Nelder-Mead', options=opts)
+    cost_min = 1
+    for invert in range(2):
+        arr = gen_array(ptrn_imgs, max_area_index, invert, 0)
+        # TODO: Optimization isn't really needed at first placement. Can simply put this array at bottom left and choose the lowest cost (inv or not).
+        res = optimize.minimize(cost_func, (main_array.shape[0]/2,main_array.shape[1]/2), args=(main_array, main_array.sum(), arr, 2, 0), method='Nelder-Mead', options=opts)
+        if res.fun < cost_min:
+            res_min = res
+            inv = invert
     
-    if res.x[0] < 0:
-        res.x[0] = 0
-    if res.x[0] > (main_array.shape[0] - max_area_arr.shape[0]):
-        res.x[0] = main_array.shape[0] - max_area_arr.shape[0]
+    if res_min.x[0] < 0:
+        res_min.x[0] = 0
+    if res_min.x[0] > (main_array.shape[0] - max_area_arr.shape[0]):
+        res_min.x[0] = main_array.shape[0] - max_area_arr.shape[0]
 
-    if res.x[1] < 0:
-        res.x[1] = 0
-    if res.x[1] > (main_array.shape[1] - max_area_arr.shape[1]):
-        res.x[1] = main_array.shape[1] - max_area_arr.shape[1] 
+    if res_min.x[1] < 0:
+        res_min.x[1] = 0
+    if res_min.x[1] > (main_array.shape[1] - max_area_arr.shape[1]):
+        res_min.x[1] = main_array.shape[1] - max_area_arr.shape[1] 
     
-    y_min = int(res.x[0])
-    x_min = int(res.x[1])
+    y_min = int(res_min.x[0])
+    x_min = int(res_min.x[1])
 
-    return y_min, x_min, max_area_index
+    return y_min, x_min, max_area_index, inv
 
 def opt_place(copies, ptrn_imgs, fabric_width):
     """
@@ -940,19 +950,25 @@ def opt_place(copies, ptrn_imgs, fabric_width):
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 0, 0, 0)
     main_poly_ind = []
     main_poly_pts = []
-    y,x,arr_index = first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs)
-    arr, aprox_cnt, center_y, center_x, max_dist = gen_array(ptrn_imgs, arr_index, False, 1)
+    y,x,arr_index, inv = first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs)
+    arr, aprox_cnt, center_y, center_x, _ = gen_array(ptrn_imgs, arr_index, inv, 1)
     center_y += y
     center_x += x
     main_poly_ind.append(arr_index)
+
+    for n in range(len(aprox_cnt)): # Changing to (y,x) from (x,y) format
+        tempx = aprox_cnt[n][0][0]
+        aprox_cnt[n][0][0] = aprox_cnt[n][0][1]
+        aprox_cnt[n][0][1] = tempx
+
     for i in range(len(aprox_cnt)):
         aprox_cnt[i][0][0] += y
         aprox_cnt[i][0][1] += x
+
     main_poly_pts.append(aprox_cnt)
     
     # Preparing for subsequent pattern placements
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cnt, 0)
-    
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
     ## For Debugging
     # plt.imshow(main_array, interpolation='none')
@@ -967,23 +983,33 @@ def opt_place(copies, ptrn_imgs, fabric_width):
     for k in range(num_of_copies):
         print(k)
         main_array_init = main_array.copy()           
-        min = 1e10
+        min = 1
         index_min_val = 0
         for i in range(num_of_ptrns):
             if (i in main_poly_ind) and (main_poly_ind.count(i) == copies[i]):      # Taking number of copies into account.
                 continue
-            cost_min = 1e10
+            cost_min = 1
             for invert in range(2):
                 arr, aprox_cnt, center_x, center_y, _ = gen_array(ptrn_imgs, i, invert, 2)            
                 for p in range(len(main_poly_pts)):
                     for j in range(len(main_poly_pts[p])):
                         # main_array_copy = main_array.copy()
                         y = main_poly_pts[p][j][0][0] - center_y
-                        x = main_poly_pts[p][j][0][1] - center_x                    
+                        x = main_poly_pts[p][j][0][1] - center_x                                            
+                        # Prevent initializing outside of main_array
+                        if y < 0:
+                            y = 0
+                        elif y > (main_array.shape[0] - arr.shape[0]):
+                            y = main_array.shape[0] - arr.shape[0]
+                        if x < 0:
+                            x = 0
+                        elif x > (main_array.shape[1] - arr.shape[1]):
+                            x = main_array.shape[1] - arr.shape[1]
+
                         init_pos = [y,x]
                         ## Maniuplate x and y simultaneously:                
                         debug = 0
-                        # if i == 3 and invert:
+                        # if i == 6:
                         #     debug = 1
                         res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr, debug), method='Nelder-Mead', options=opts)
                         y = res.x[0]
@@ -1121,7 +1147,8 @@ def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
     main_arr_copy = main_array.copy()
     main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = np.multiply((main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid]),arr[arr_y_start:arr_y_end, arr_x_start:arr_x_end])
     cost = norm_param * main_arr_copy.sum() / init_main_arr_sum
-    
+    # plt.imshow(main_arr_copy, interpolation='none')
+    # plt.waitforbuttonpress()
     return cost
 
 
@@ -1165,8 +1192,8 @@ def cost_func_NFP(pos, main_array, arr, debug):
         cost *= -100
     # cost *= (1 + (x_pos/main_array.shape[1]))
     
-    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = 0
     if debug:
+        main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
         plt.title(cost)
         # plt.text(x_pos,y_pos,x_pos, fontsize=12)
         plt.text(x_pos,y_pos,y_pos, fontsize=12)
