@@ -413,7 +413,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
-                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=12, color=(0,0,0), thickness=3)
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=20, color=(0,0,0), thickness=70)
                         cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
@@ -427,7 +427,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
-                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=12, color=(0,0,0), thickness=3)
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=20, color=(0,0,0), thickness=70)
                         cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
@@ -826,7 +826,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
             for j in range (arr.shape[1]): 
                 dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
                 if (dist > 0): #Inside contour
-                    arr.itemset((i,j), (-(max_dist - dist) / (10*max_dist)))
+                    arr.itemset((i,j), (-(dist) / (max_dist)))
                 elif (dist == 0): #on contour
                     arr.itemset((i,j), 1.0)
                 else:   #Outisde contour
@@ -979,7 +979,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     # Adding pattern # to image.
     cv2.imwrite('opt_res.png',main_array*200)
     image = cv2.imread('opt_res.png')
-    image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(255,255,0), thickness=3)
+    image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=2, color=(255,255,0), thickness=3)
     cv2.imwrite('opt_res.png',image)
 
     opts = {'disp': False, 'maxiter': 50, 'fatol': 1e-9}
@@ -1084,7 +1084,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
             # Adding pattern # to image.
             image = cv2.imread('opt_res.png', cv2.IMREAD_GRAYSCALE)
             image[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = abs(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]]) * 200
-            image = cv2.putText(img=image, text=str(index_min_val), org=(center_x_min, center_y_min), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(255,255,0), thickness=3)
+            image = cv2.putText(img=image, text=str(index_min_val), org=(center_x_min, center_y_min), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=2, color=(255,255,0), thickness=3)
             cv2.imwrite('opt_res.png',image)
              
     plt.imshow(main_array, interpolation='none')

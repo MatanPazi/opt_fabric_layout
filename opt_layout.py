@@ -36,7 +36,7 @@ def gui_choose_patterns():
     img_abs_path = os.path.abspath("patterns_overview.png")
     img_temp = cv2.imread(img_abs_path)
     height = img_temp.shape[0]
-    photo = PhotoImage(file = img_abs_path)
+    photo = PhotoImage(master = root, file = img_abs_path)
     photoimage = photo
     # Resizing image to fit on button
     if height > 8000:
