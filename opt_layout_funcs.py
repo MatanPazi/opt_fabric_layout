@@ -413,7 +413,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
-                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=5, color=(0,0,0), thickness=3)
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=12, color=(0,0,0), thickness=3)
                         cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
@@ -427,7 +427,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
-                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=5, color=(0,0,0), thickness=3)
+                        image_tmp = cv2.putText(img=image_tmp, text=str(ptrn_cnt_counter), org=(x_ptrn, y_ptrn), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=12, color=(0,0,0), thickness=3)
                         cv2.imwrite('patterns_overview.png',image_tmp)
                         potential_contours.append(cnt)
                         potential_contours_ptrn_index.append(ptrn_cnt_counter)
@@ -865,7 +865,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
         if i not in ptrn_list:
             continue
         arr = gen_array(ptrn_imgs, i, False, 0)
-        len += arr.shape[0]
+        len += arr.shape[1]
     shape = (Fabric_width, len)
     if config == 0:
         main_array = np.zeros(shape)
@@ -974,12 +974,12 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cnt, 0, ptrn_list)
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
     ## For Debugging
-    plt.imshow(main_array, interpolation='none')
-    plt.waitforbuttonpress()
+    # plt.imshow(main_array, interpolation='none')
+    # plt.waitforbuttonpress()
     # Adding pattern # to image.
     cv2.imwrite('opt_res.png',main_array*200)
     image = cv2.imread('opt_res.png')
-    image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=2, color=(255,255,0), thickness=3)
+    image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(255,255,0), thickness=3)
     cv2.imwrite('opt_res.png',image)
 
     opts = {'disp': False, 'maxiter': 50, 'fatol': 1e-9}
@@ -988,9 +988,11 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
         main_array_init = main_array.copy()           
         min = 1
         index_min_val = 0
+        ptrn_added = 0
         for i in range(num_of_ptrns):
-            if ((i in main_poly_ind) and (main_poly_ind.count(i) == copies[i])) or (i not in ptrn_list):      # Taking number of copies into account.
+            if ((i in main_poly_ind) and (main_poly_ind.count(i) == copies[i])) or (i not in ptrn_list):      # Taking number of copies into account.                
                 continue
+            ptrn_added = 1
             cost_min = 1
             for invert in range(2):
                 arr, aprox_cnt, center_x, center_y, _ = gen_array(ptrn_imgs, i, invert, 2)            
@@ -1058,7 +1060,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
                 center_y_min = int(center_y_temp)
                 center_x_min = int(center_x_temp)
         
-        if (len(main_poly_ind) < num_of_copies):
+        if (len(main_poly_ind) < num_of_copies) and (ptrn_added == 1):
             arr_min, aprox_cnt_min, _, _, _ = gen_array(ptrn_imgs, index_min_val, invert_min, 1)
             for n in range(len(aprox_cnt_min)): # Changing to (y,x) from (x,y) format
                 tempx = aprox_cnt_min[n][0][0]
@@ -1082,7 +1084,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
             # Adding pattern # to image.
             image = cv2.imread('opt_res.png', cv2.IMREAD_GRAYSCALE)
             image[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = abs(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]]) * 200
-            image = cv2.putText(img=image, text=str(index_min_val), org=(center_x_min, center_y_min), fontFace=cv2.FONT_HERSHEY_SCRIPT_COMPLEX, fontScale=2, color=(255,255,0), thickness=3)
+            image = cv2.putText(img=image, text=str(index_min_val), org=(center_x_min, center_y_min), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=2, color=(255,255,0), thickness=3)
             cv2.imwrite('opt_res.png',image)
              
     plt.imshow(main_array, interpolation='none')

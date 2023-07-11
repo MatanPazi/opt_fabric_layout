@@ -1,6 +1,8 @@
 from opt_layout_funcs import *
-import glob
 from tkinter import *
+import cv2
+from matplotlib import pyplot as plt
+from PIL import ImageTk, Image
 
 
 def get_vals():    
@@ -24,12 +26,28 @@ def gui_choose_patterns():
         cb[i] = Checkbutton(root, text=cbTexts[i].get(), variable=cbVariables[i])
         cb[i].pack()
 
+
     frame = Frame(root)
     frame.pack()
     button = Button(frame, text="Set", fg="red", command=get_vals)
     button.pack(side=LEFT)
     
+    # Add patterns overview image
+    img_abs_path = os.path.abspath("patterns_overview.png")
+    img_temp = cv2.imread(img_abs_path)
+    height = img_temp.shape[0]
+    photo = PhotoImage(file = img_abs_path)
+    photoimage = photo
+    # Resizing image to fit on button
+    if height > 8000:
+        photoimage = photoimage.subsample(20, 20)
+    else:
+        photoimage = photoimage.subsample(10, 10)
+    
+    Label(root, image=photoimage).pack()
+
     mainloop()
+
 
 
 
@@ -45,9 +63,9 @@ def gui_choose_patterns():
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
 
-Direction_Layer = 0
-Pattern_Layer = 1
-pdf_name = 'bt67-A0-pattern.pdf'
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
@@ -59,11 +77,9 @@ pdf_name = 'bt67-A0-pattern.pdf'
 # Pattern_Layer = 9
 # pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
 
-# Made up of 2 pages
-# This pattern not working well. Need to debug.
-# Direction_Layer = 1
-# Pattern_Layer = 3
-# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+Direction_Layer = 1
+Pattern_Layer = 3
+pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 pdf_out = 'Page_{page_num}_Layer_{layer_num}.pdf'
 img_out_init = 'Page_{page_num}_Layer_{layer_num}.png'
@@ -95,13 +111,15 @@ fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
 
 # Parameters for GUI
 num_of_ptrns = len(copies)
+# num_of_ptrns = 5
 # Variables for GUI
 ptrn_list = []
 cbVariables = {}
+# Create an instance of tkinter window
 root = Tk()
+root.state(newstate='normal')
+root.attributes('-topmost',True)
 gui_choose_patterns()
-
-
 
 
 opt_place(copies, ptrn_imgs, fabric_width, ptrn_list)
