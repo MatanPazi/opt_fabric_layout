@@ -826,7 +826,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
             for j in range (arr.shape[1]): 
                 dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
                 if (dist > 0): #Inside contour
-                    arr.itemset((i,j), (-(dist) / (max_dist)))
+                    arr.itemset((i,j), (-dist / max_dist))
                 elif (dist == 0): #on contour
                     arr.itemset((i,j), 1.0)
                 else:   #Outisde contour
@@ -932,8 +932,6 @@ def first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs, ptrn_list):
             cost_min = cost
             inv = invert
     
-
-
     return y_pos, x_pos, max_area_index, inv
 
 def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
@@ -972,7 +970,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     
     # Preparing for subsequent pattern placements
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cnt, 0, ptrn_list)
-    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
+    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
     ## For Debugging
     # plt.imshow(main_array, interpolation='none')
     # plt.waitforbuttonpress()
@@ -1014,7 +1012,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
                         init_pos = [y,x]
                         ## Maniuplate x and y simultaneously:                
                         debug = 0
-                        # if i == 6:
+                        # if i == 1:
                         #     debug = 1
                         res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr, debug), method='Nelder-Mead', options=opts)
                         y = res.x[0]
@@ -1054,7 +1052,6 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
                 min = res_min.fun
                 y_min = int(res_min.x[0])
                 x_min = int(res_min.x[1])
-                arr_min = arr
                 index_min_val = i   
                 invert_min = inv_temp
                 center_y_min = int(center_y_temp)
@@ -1077,7 +1074,8 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
 
             main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 2, aprox_cnt_min, main_array_init, ptrn_list)
 
-            main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)
+            # main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)
+            main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = arr_min
             ## For Debugging
             # plt.imshow(main_array, interpolation='none')
             # plt.waitforbuttonpress()
@@ -1165,16 +1163,16 @@ def cost_func_NFP(pos, main_array, arr, debug):
     main_arr_wid = x_pos + arr.shape[1]    
     cost = 0
     if y_pos < 0:
-        cost += abs(y_pos)/arr.shape[0]
+        cost += abs(y_pos)/10
 
     if y_pos > (main_array.shape[0] - arr.shape[0]):
-        cost += (y_pos + arr.shape[0] - main_array.shape[0])/main_array.shape[0]
+        cost += (y_pos + arr.shape[0] - main_array.shape[0])/10
 
     if x_pos < 0:
-        cost += abs(x_pos)/main_array.shape[1]
+        cost += abs(x_pos)/10
 
     if x_pos > (main_array.shape[1] - arr.shape[1]):
-        cost += (x_pos + arr.shape[1] - main_array.shape[1])/main_array.shape[1]
+        cost += (x_pos + arr.shape[1] - main_array.shape[1])/10
     
     if cost != 0:
         if debug:
@@ -1191,11 +1189,10 @@ def cost_func_NFP(pos, main_array, arr, debug):
     init_sum = main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum()
     if init_sum == 0:
         cost = 1
+    elif init_sum > 0:
+        cost = 1/init_sum
     else:
-        cost = 1/(main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid].sum())
-    if cost < 0:
-        cost *= -100
-    # cost *= (1 + (x_pos/main_array.shape[1]))
+        cost = -init_sum/1000
     
     if debug:
         main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr

@@ -4,6 +4,42 @@ import cv2
 from matplotlib import pyplot as plt
 from PIL import ImageTk, Image
 
+# Direction_Layer = 1
+# Pattern_Layer = 2
+# pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
+
+# Direction_Layer = 0
+# Pattern_Layer = 3
+# pdf_name = 'LL Leo Pattern Size A0.pdf'
+
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt119-A0-pattern.pdf'
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'bt67-A0-pattern.pdf'
+
+## Seems like all the data is on layer 0...???
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'BLOMMA TANK-A0-copyshop.pdf'
+
+# There's a legend for "cut on fold" so doesn't say so on the arrow itself. Need to add legend layer to read.
+# Direction_Layer = 8
+# Pattern_Layer = 9
+# pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
+
+# Direction_Layer = 1
+# Pattern_Layer = 3
+# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+
+
+
+
+
+
+
+
 
 def get_vals():    
     for i in range(num_of_ptrns):
@@ -50,36 +86,6 @@ def gui_choose_patterns():
 
 
 
-
-# Direction_Layer = 1
-# Pattern_Layer = 2
-# pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
-
-# Direction_Layer = 0
-# Pattern_Layer = 3
-# pdf_name = 'LL Leo Pattern Size A0.pdf'
-
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'bt119-A0-pattern.pdf'
-
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'bt67-A0-pattern.pdf'
-
-## Seems like all the data is on layer 0...???
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'BLOMMA TANK-A0-copyshop.pdf'
-
-# There's a legend for "cut on fold" so doesn't say so on the arrow itself. Need to add legend layer to read.
-# Direction_Layer = 8
-# Pattern_Layer = 9
-# pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
-
-Direction_Layer = 1
-Pattern_Layer = 3
-pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 pdf_out = 'Page_{page_num}_Layer_{layer_num}.pdf'
 img_out_init = 'Page_{page_num}_Layer_{layer_num}.png'
