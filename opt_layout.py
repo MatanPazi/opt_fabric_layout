@@ -15,6 +15,7 @@ from PIL import ImageTk, Image
 # Direction_Layer = 0
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
+
 Direction_Layer = 0
 Pattern_Layer = 1
 pdf_name = 'bt67-A0-pattern.pdf'
@@ -32,9 +33,6 @@ pdf_name = 'bt67-A0-pattern.pdf'
 # Direction_Layer = 1
 # Pattern_Layer = 3
 # pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
-
-
-
 
 
 

@@ -25,8 +25,6 @@ min_rot_ang = 3
 
 
 
-
-
 # Extract relevant PDF layers
 # Source: https://gist.github.com/jangxx/bd9256009b6698f1550fb7034003f877.
 # Made relevant changes.
@@ -872,35 +870,21 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
         for i in range(Fabric_width):
             for j in range(len):
                 main_array[i,j] = 500*(2 + i/Fabric_width - 2*math.sqrt((j+1)/len))        
-    elif config == 1:    #First placement
+    else:
         max_dist = math.sqrt(Fabric_width**2 + len**2)
-        main_array = max_dist * np.ones(shape)
-        # main_array = np.zeros(shape)
-        # for cntr in approx_cntrs:
-        for i in range(Fabric_width):
-            for j in range(len):
-                dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
-                if dist > 0:    # Outside the contour
-                    if dist < main_array[i,j]:  # Min distance 
-                        main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
-                else:
-                    main_array[i,j] = 1
-       
-    else:   #Subsequent placements
-        # TODO: Consider adding to every index x/len or something and removing x_pos from NFP cost function.
-        max_dist = math.sqrt(Fabric_width**2 + len**2)
+        if config == 1:    #First placement
+            main_array = max_dist * np.ones(shape)
         for i in range(Fabric_width):
             for j in range(len):
                 if main_array[i,j] > 0: #Not inside another contour
                     dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
                     if dist > 0:    # Outside the current contour
                         temp = (max_dist - dist) / max_dist + (len-j)/len
-                        if temp > main_array[i,j]:  # Min distance 
+                        if (temp > main_array[i,j]) or (config == 1):  # Min distance 
                             main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
                     else:
                         main_array[i,j] = 1
-    
-     
+         
     return main_array
 
 def first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs, ptrn_list):
@@ -970,13 +954,14 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     
     # Preparing for subsequent pattern placements
     main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cnt, 0, ptrn_list)
-    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = arr
+    main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
     ## For Debugging
     # plt.imshow(main_array, interpolation='none')
     # plt.waitforbuttonpress()
     # Adding pattern # to image.
-    cv2.imwrite('opt_res.png',main_array*200)
-    image = cv2.imread('opt_res.png')
+    cv2.imwrite('opt_res.png',main_array)
+    image = cv2.imread('opt_res.png', cv2.IMREAD_GRAYSCALE)
+    image[y:y+arr.shape[0], x:x+arr.shape[1]] = abs(main_array[y:y+arr.shape[0], x:x+arr.shape[1]]) * 200
     image = cv2.putText(img=image, text=str(arr_index), org=(center_x, center_y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=2, color=(255,255,0), thickness=3)
     cv2.imwrite('opt_res.png',image)
 
@@ -1073,9 +1058,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
             main_poly_pts.append(aprox_cnt_min)
 
             main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 2, aprox_cnt_min, main_array_init, ptrn_list)
-
-            # main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)
-            main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = arr_min
+            main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)
             ## For Debugging
             # plt.imshow(main_array, interpolation='none')
             # plt.waitforbuttonpress()
