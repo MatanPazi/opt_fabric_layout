@@ -20,7 +20,7 @@ import fitz
 # Global params
 A0_Width  = 841
 A0_Height = 1189    
-min_rot_ang = 3
+min_rot_ang = 10
 
 
 
@@ -131,7 +131,7 @@ def pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count):
             # Iterate over each page of the PDF
             for i, page in enumerate(pdf_file):
                 # Render the page as a pixmap
-                pix = page.get_pixmap(dpi = 150)
+                pix = page.get_pixmap(dpi = 200)
 
                 # Save the pixmap as PNG image
                 pix.save(path + '/' + img_out_init.format(page_num = k, layer_num=desired_layers[j]), 'PNG')
@@ -192,22 +192,23 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
     width, height = tuple(map(int, size))
     center = tuple(map(int, center))    
     ## For debugging
-    image_copy = image.copy()
-    x = rect[0][0]
-    y = rect[0][1]
-    w = rect[1][0]
-    h = rect[1][1]
-    theta = rect[2]   
-    draw_angled_rec(x, y, w, h, theta, image_copy, 'pink')
-    cv2.imwrite('img_test.png',image_copy)
+    # image_copy = image.copy()
+    # x = rect[0][0]
+    # y = rect[0][1]
+    # w = rect[1][0]
+    # h = rect[1][1]
+    # theta = rect[2]
+    # draw_angled_rec(x, y, w, h, theta, image_copy, 'pink')
+    # cv2.imwrite('img_compy.png',image_copy)
+
     # Allow only for angles of rotation lower than 90 degrees.
     # To simplify handling.
     if theta == 90:
         if width > height:
             alpha = 90
-            width, height = height, width
         else:
             alpha = 0
+            width, height = height, width
     elif theta == 0:
         if width < height:
             alpha = 90        
@@ -218,7 +219,7 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
         alpha = 90 - theta
         if type == 'ang_rtrn' and width > height: # We want the rot ang required to have a horizontal grainline
             alpha += 90
-        else:                                     # Otherwise, for cropping, we always need to switch width and height
+        else:                                     # Otherwise, for cropping, we always need to switch width and height so height is on y axis.
             width, height = height, width   
             
     if type == 'ang_rtrn':
@@ -303,9 +304,9 @@ def find_pattern_contours(image, type):
     # convolved and third parameter is the number
     # of iterations, which will determine how much
     # you want to erode/dilate a given image.
-    img = cv2.erode(img, kernel, iterations=6)
+    img = cv2.erode(img, kernel, iterations=7)
     cv2.imwrite('img_test.png', img)
-    img = cv2.dilate(img, kernel, iterations=3)
+    img = cv2.dilate(img, kernel, iterations=2)
     cv2.imwrite('img_test.png', img)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
@@ -351,7 +352,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
     # Need to blurr direction layer image due to intersecting lines on grainline arrows, causing contour detection to assume the arrow is divided.    
     img_blurred = img.copy()
     cv2.imwrite('image_copy.png',img_blurred)
-    kernel_size = 3
+    kernel_size = 1
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     img_blurred = cv2.erode(img_blurred, kernel, iterations=2)
     img_blurred = cv2.dilate(img_blurred, kernel, iterations=2)
@@ -452,7 +453,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
         
     Returns:
-        rot_ang - A list of the rotation angles needed for each pattern to get the first (Arbitrary) direction contour horizontal.
+        rot_ang - A list of the rotation angle data needed for each pattern to get the first (Arbitrary) direction contour horizontal.
     """
     img0 = cv2.imread(ptrn_image)
     cv2.imwrite('img_test.png',img0)
@@ -471,7 +472,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         blank[ptrn_img.shape[0]:ptrn_img.shape[0]*2, ptrn_img.shape[1]:ptrn_img.shape[1]*2] = ptrn_img
         cv2.imwrite(pattern_img.format(num = i), blank)  
         ptrn_img = cv2.imread(pattern_img.format(num = i))
-        ptrn_img = imutils.rotate_bound(ptrn_img, angle = ang)
+        ptrn_img = imutils.rotate_bound(ptrn_img, angle = ang)      # Rotating here and not in fold_patterns() because we want to flip image on straight edge.
         cv2.imwrite(pattern_img.format(num = i), ptrn_img)
         img_temp = ptrn_img.copy()
         cv2.imwrite('img_temp.png',img_temp)
@@ -646,7 +647,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
     Args:
         fold_list - list of fold direction contours per pattern \n
         pattern_img - pattern images format \n
-        rot_ang - rotation angles needed to make sure the grainlines are horizontal \n
+        rot_ang - rotation angle data needed to make sure the grainlines are horizontal \n
         size - size of the original images to know how much to resize to fit to an A0 size
         
     Returns:
@@ -675,14 +676,17 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 y = rect[0][1]
                 w = rect[1][0]
                 h = rect[1][1]
-                angle = rect[2] + rot_ang[i] - 90   # Rotated the pattern after fold_list was filled, so subtracting the rotated angles. Shitty solution but should work for now.
-                if angle >= 90:
-                    angle -= 90    
-                    invert = 1
-                if rot_ang[i] < 90:                 # if rot_ang[i] < 90 that means a 90 deg rot happened, and we need to switch height and width
-                    w,h = h,w
+                angle = rect[2] + rot_ang[i]
 
-                if angle < min_rot_ang:
+                if rot_ang[i] > (180 - min_rot_ang):
+                    invert = 1
+                
+                elif rot_ang[i] > (90 - min_rot_ang):
+                    tempx = x
+                    x = ptrn_img.shape[0] - y
+                    y = tempx
+
+                if (angle < min_rot_ang) or invert:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.
                             break

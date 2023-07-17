@@ -16,9 +16,9 @@ from PIL import ImageTk, Image
 # Pattern_Layer = 1
 # pdf_name = 'bt119-A0-pattern.pdf'
 
-Direction_Layer = 0
-Pattern_Layer = 1
-pdf_name = 'bt67-A0-pattern.pdf'
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt67-A0-pattern.pdf'
 
 ## Seems like all the data is on layer 0...???
 # Direction_Layer = 0
@@ -30,9 +30,9 @@ pdf_name = 'bt67-A0-pattern.pdf'
 # Pattern_Layer = 9
 # pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
 
-# Direction_Layer = 1
-# Pattern_Layer = 3
-# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+Direction_Layer = 1
+Pattern_Layer = 3
+pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 
 
@@ -107,8 +107,8 @@ size = pdf2image(desired_layers, pdf_out, img_out_init, img_out, page_count)
 pattern_contours = find_pattern_contours(img_out.format(num=Pattern_Layer), False)
 potential_dir_contours, potential_contour_pattern, pattern_contours = find_potential_direction_contours(img_out.format(num=Direction_Layer), pattern_contours)
 copies, lining, main_fabric, fold, dir_cnt = find_text(img_out.format(num=Direction_Layer), pattern_contours, potential_dir_contours, potential_contour_pattern)
-rot_angles = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
-fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles)
+rot_angles_data = save_patterns(img_out.format(num=Pattern_Layer), pattern_contours, dir_cnt, potential_contour_pattern, ptrn_imgs)
+fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles_data)
 
 # Optimization section
 fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
