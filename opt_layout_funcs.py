@@ -185,42 +185,46 @@ def draw_angled_rec(x0, y0, width, height, angle, img, color):
 
 # Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
 # Made slight changes
-def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
-    rect = cv2.minAreaRect(cnt)
-    shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
-    center, size, theta = rect
-    width, height = tuple(map(int, size))
-    center = tuple(map(int, center))    
-    ## For debugging
-    # image_copy = image.copy()
-    # x = rect[0][0]
-    # y = rect[0][1]
-    # w = rect[1][0]
-    # h = rect[1][1]
-    # theta = rect[2]
-    # draw_angled_rec(x, y, w, h, theta, image_copy, 'pink')
-    # cv2.imwrite('img_compy.png',image_copy)
+def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in):
+    if type == 'new_xy':
+        center = (x_in, y_in)
+        shape = (image.shape[0], image.shape[1])  # Switching shape 1 and 0 since new_xy type assumes a 90 deg rotation.
+    else:
+        rect = cv2.minAreaRect(cnt)        
+        shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
+        center, size, theta = rect
+        width, height = tuple(map(int, size))
+        center = tuple(map(int, center))    
+        ## For debugging
+        # image_copy = image.copy()
+        # x = rect[0][0]
+        # y = rect[0][1]
+        # w = rect[1][0]
+        # h = rect[1][1]
+        # theta = rect[2]
+        # draw_angled_rec(x, y, w, h, theta, image_copy, 'pink')
+        # cv2.imwrite('img_compy.png',image_copy)
 
-    # Allow only for angles of rotation lower than 90 degrees.
-    # To simplify handling.
-    if theta == 90:
-        if width > height:
-            alpha = 90
-        else:
-            alpha = 0
-            width, height = height, width
-    elif theta == 0:
-        if width < height:
-            alpha = 90        
-            width, height = height, width
-        else:
-            alpha = 0
-    else:                    # theta != 0 and theta != 90:
-        alpha = 90 - theta
-        if type == 'ang_rtrn' and width > height: # We want the rot ang required to have a horizontal grainline
-            alpha += 90
-        else:                                     # Otherwise, for cropping, we always need to switch width and height so height is on y axis.
-            width, height = height, width   
+        # Allow only for angles of rotation lower than 90 degrees.
+        # To simplify handling.
+        if theta == 90:
+            if width > height:
+                alpha = 90
+            else:
+                alpha = 0
+                width, height = height, width
+        elif theta == 0:
+            if width < height:
+                alpha = 90        
+                width, height = height, width
+            else:
+                alpha = 0
+        else:                    # theta != 0 and theta != 90:
+            alpha = 90 - theta
+            if type == 'ang_rtrn' and width > height: # We want the rot ang required to have a horizontal grainline
+                alpha += 90
+            else:                                     # Otherwise, for cropping, we always need to switch width and height so height is on y axis.
+                width, height = height, width   
             
     if type == 'ang_rtrn':
         # if alpha < min_rot_ang:
@@ -229,6 +233,8 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
         #     if (abs(alpha - 90) < min_rot_ang and (alpha != 90)):
         #         alpha = 90
         return alpha
+    elif type == 'new_xy':
+        alpha = ang_in
     
     x_old = int(center[0])
     y_old = int(center[1])
@@ -262,6 +268,8 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs):
         else:
             new_width = width // 2
             new_height = math.floor(2 * height)         # To make sure the text is encompassed
+    elif type == 'new_xy':
+        return x_new, y_new
 
     if (y_new - new_height) < 0:
         y_new = new_height
@@ -368,7 +376,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         # img_debug = img.copy()
         # cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
         # cv2.imwrite('img_debug.png',img_debug) 
-        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0)    
+        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0, 0, 0, 0)    
         img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
         # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
@@ -459,10 +467,10 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
     cv2.imwrite('img_test.png',img0)
     rot_ang = []
     for i in range(len(pattern_contours)):
-        img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0)
+        img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0, 0, 0, 0)
         cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
-        ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img)
+        ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img, 0, 0, 0)
         rot_ang.append(ang)
 
         cv2.imwrite(pattern_img.format(num = i), img1)
@@ -590,9 +598,9 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         lining = 0
         main_fabric = 1
         fold = []
-        cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0)    
+        cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0, 0, 0, 0)    
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:
-            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0)
+            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0, 0, 0, 0)
             for i in range (int(360/ang_inc) - 1):                                      # Rotating 360 deg in 90 deg inc to find all text orientations.
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
@@ -682,9 +690,8 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                     invert = 1
                 
                 elif rot_ang[i] > (90 - min_rot_ang):
-                    tempx = x
-                    x = ptrn_img.shape[0] - y
-                    y = tempx
+                    x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y)                    
+                    w,h = h,w
 
                 if (angle < min_rot_ang) or invert:
                     if w > h:
