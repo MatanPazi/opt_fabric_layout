@@ -691,7 +691,8 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 
                 elif rot_ang[i] > (90 - min_rot_ang):
                     x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y)                    
-                    w,h = h,w
+                    if rect[2] > (90 - min_rot_ang):
+                        w,h = h,w
 
                 if (angle < min_rot_ang) or invert:
                     if w > h:

@@ -12,9 +12,9 @@ from PIL import ImageTk, Image
 # Pattern_Layer = 3
 # pdf_name = 'LL Leo Pattern Size A0.pdf'
 
-# Direction_Layer = 0
-# Pattern_Layer = 1
-# pdf_name = 'bt119-A0-pattern.pdf'
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'bt119-A0-pattern.pdf'
 
 # Direction_Layer = 0
 # Pattern_Layer = 1
@@ -30,9 +30,9 @@ from PIL import ImageTk, Image
 # Pattern_Layer = 9
 # pdf_name = '9-BAS_trapeze_patronAVECmarges-AtelierCharlotteAuzou_A0_34-48.pdf'
 
-Direction_Layer = 1
-Pattern_Layer = 3
-pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+# Direction_Layer = 1
+# Pattern_Layer = 3
+# pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
 
 
 
