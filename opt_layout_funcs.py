@@ -296,11 +296,17 @@ def find_pattern_contours(image, type):
     Finds the pattern contours  \n
     Args:
         image - pattern contour image format to read \n        
-        type - bool, whether the image was resized to A0 or not, determines kernel size.
-        
+        type - determines application need for this function.
+                0 - initial pattern contour extraction
+                1 - pattern contour extraction after resizing - different kernel size
+                2 - pattern contour extraction before resizing - not saving patterns_overview img        
     Returns:
         The detected pattern contours
     """
+    min_rec_size = 100
+    min_area_diff = 0.5
+    min_dist = 100
+    epsilon = 1
     counter = 0
     img = cv2.imread(image)
         
@@ -329,20 +335,41 @@ def find_pattern_contours(image, type):
         if counter == 0:                    # First contour encompasses entire image
             counter += 1
             continue
-
-        good_contours.append(cnt)
-        heir = hierarchy[0][counter][3]     # [next, previous, first child, parent].
-                                            # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure
-        if heir != 0:                       # If heir is 0, means it's the outer most contour, which is what I'm interested in.
-            good_contours.pop(j)
-        else:             
-            j += 1
+        
+        heir = hierarchy[0][counter][3]     # [next, previous, first child, parent]. 
+                                            # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure                        
+        if heir == 0:                       # If heir is 0, means it's the outer most contour, which is what I'm interested in.            
+            good_contours.append(cnt)
+            maxArea = cv2.contourArea(cnt)
+            aprox_main_cnt = cv2.approxPolyDP(cnt, epsilon, True)
+            rect = cv2.minAreaRect(cnt)
+            w = rect[1][0]
+            h = rect[1][1]
+        else:
+            append = 0
+            aprox_cnt = cv2.approxPolyDP(cnt, epsilon, True)
+            newArea = cv2.contourArea(cnt)
+            rect = cv2.minAreaRect(cnt)
+            w = rect[1][0]
+            h = rect[1][1]
+            if (w > min_rec_size) and (h > min_rec_size) and (newArea/maxArea < min_area_diff):
+                append = 1
+                for i in range(len(aprox_main_cnt)):
+                    point_x = aprox_main_cnt.item(2*i)
+                    point_y = aprox_main_cnt.item(2*i+1)
+                    dist = abs(cv2.pointPolygonTest(aprox_cnt, (point_y,point_x), True))
+                    if dist < min_dist:
+                        append = 0                        
+            if append:
+                good_contours.append(cnt)
         counter += 1
     ## For debugging
-    if type == 0:
-        image_copy = img.copy()
-        cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    image_copy = img.copy()
+    cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
+    if type == 0:                
         cv2.imwrite('patterns_overview.png',image_copy) 
+    elif type == 1:
+        cv2.imwrite('image_copy.png',image_copy) 
     return good_contours 
 
 
@@ -792,7 +819,8 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     if inv:
         img = cv2.flip(img, 1)      # Flip horizontally
     cv2.imwrite('image_copy.png',img)
-    cntr = find_pattern_contours('image_copy.png', True)
+
+    cntr = find_pattern_contours('image_copy.png', 1)
     cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
     cv2.imwrite('image_copy.png',img)
     cntr_np = np.asarray(cntr, dtype = object)
