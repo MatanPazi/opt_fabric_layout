@@ -1083,72 +1083,6 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     plt.imshow(main_array, interpolation='none')
     plt.waitforbuttonpress()
 
-def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
-    norm_param = arr.size / main_array.size      # Normalization parameter
-    cost = 0
-    if (x_flag == 1):       # x manipulation only
-        x_pos = int(pos1)
-        y_pos = int(pos2)
-        if x_pos < 0:
-            cost = math.sqrt(1 - x_pos)
-            return cost
-        if x_pos > (main_array.shape[0] - arr.shape[0]):
-            cost = math.sqrt(x_pos -(main_array.shape[0] - arr.shape[0]))
-            return cost
-    elif (x_flag == 0):     # y manipulation only
-        x_pos = int(pos2)
-        y_pos = int(pos1)
-        if y_pos < 0:
-            cost = math.sqrt(1 - y_pos)
-            return cost
-        if y_pos > (main_array.shape[1] - arr.shape[1]):
-            cost = math.sqrt(y_pos -(main_array.shape[1] - arr.shape[1]))
-            return cost
-    else:                   # x_flag = 2, Manipulate both x and y
-        y_pos = int(pos1[0])
-        x_pos = int(pos1[1])
-        main_arr_len = y_pos+arr.shape[0]
-        main_arr_wid = x_pos+arr.shape[1]
-        arr_y_start = 0
-        arr_y_end = arr.shape[0]        
-        arr_x_start = 0
-        arr_x_end = arr.shape[1]
-        if y_pos < 0:
-            if abs(y_pos) > arr.shape[0]:
-                cost += (abs(y_pos) - arr.shape[0]) * norm_param
-            else:
-                arr_y_start = abs(y_pos)
-                y_pos = 0
-        if y_pos > (main_array.shape[0] - arr.shape[0]):
-            if y_pos > main_array.shape[0]:
-                cost += (y_pos - main_array.shape[0]) * norm_param
-            else:
-                arr_y_end = main_array.shape[0] - y_pos
-                main_arr_len = main_array.shape[0]  
-
-        if x_pos < 0:
-            if abs(x_pos) > arr.shape[1]:
-                cost += (abs(x_pos) - arr.shape[1]) * norm_param
-            else:
-                arr_x_start = abs(x_pos)
-                x_pos = 0
-        if x_pos > (main_array.shape[1] - arr.shape[1]):
-            if x_pos > main_array.shape[0]:
-                cost += (x_pos - main_array.shape[1]) * norm_param
-            else:
-                arr_x_end = main_array.shape[1] - x_pos
-                main_arr_wid = main_array.shape[1]            
-    
-    if cost != 0:
-        return cost
-    
-    main_arr_copy = main_array.copy()
-    main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = np.multiply((main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid]),arr[arr_y_start:arr_y_end, arr_x_start:arr_x_end])
-    cost = norm_param * main_arr_copy.sum() / init_main_arr_sum
-    # plt.imshow(main_arr_copy, interpolation='none')
-    # plt.waitforbuttonpress()
-    return cost
-
 
 
 def cost_func_NFP(pos, main_array, arr, debug):
@@ -1201,3 +1135,72 @@ def cost_func_NFP(pos, main_array, arr, debug):
 
 
 
+
+
+
+# Old cost function
+# def cost_func(pos1, main_array, init_main_arr_sum, arr, x_flag, pos2):
+#     norm_param = arr.size / main_array.size      # Normalization parameter
+#     cost = 0
+#     if (x_flag == 1):       # x manipulation only
+#         x_pos = int(pos1)
+#         y_pos = int(pos2)
+#         if x_pos < 0:
+#             cost = math.sqrt(1 - x_pos)
+#             return cost
+#         if x_pos > (main_array.shape[0] - arr.shape[0]):
+#             cost = math.sqrt(x_pos -(main_array.shape[0] - arr.shape[0]))
+#             return cost
+#     elif (x_flag == 0):     # y manipulation only
+#         x_pos = int(pos2)
+#         y_pos = int(pos1)
+#         if y_pos < 0:
+#             cost = math.sqrt(1 - y_pos)
+#             return cost
+#         if y_pos > (main_array.shape[1] - arr.shape[1]):
+#             cost = math.sqrt(y_pos -(main_array.shape[1] - arr.shape[1]))
+#             return cost
+#     else:                   # x_flag = 2, Manipulate both x and y
+#         y_pos = int(pos1[0])
+#         x_pos = int(pos1[1])
+#         main_arr_len = y_pos+arr.shape[0]
+#         main_arr_wid = x_pos+arr.shape[1]
+#         arr_y_start = 0
+#         arr_y_end = arr.shape[0]        
+#         arr_x_start = 0
+#         arr_x_end = arr.shape[1]
+#         if y_pos < 0:
+#             if abs(y_pos) > arr.shape[0]:
+#                 cost += (abs(y_pos) - arr.shape[0]) * norm_param
+#             else:
+#                 arr_y_start = abs(y_pos)
+#                 y_pos = 0
+#         if y_pos > (main_array.shape[0] - arr.shape[0]):
+#             if y_pos > main_array.shape[0]:
+#                 cost += (y_pos - main_array.shape[0]) * norm_param
+#             else:
+#                 arr_y_end = main_array.shape[0] - y_pos
+#                 main_arr_len = main_array.shape[0]  
+
+#         if x_pos < 0:
+#             if abs(x_pos) > arr.shape[1]:
+#                 cost += (abs(x_pos) - arr.shape[1]) * norm_param
+#             else:
+#                 arr_x_start = abs(x_pos)
+#                 x_pos = 0
+#         if x_pos > (main_array.shape[1] - arr.shape[1]):
+#             if x_pos > main_array.shape[0]:
+#                 cost += (x_pos - main_array.shape[1]) * norm_param
+#             else:
+#                 arr_x_end = main_array.shape[1] - x_pos
+#                 main_arr_wid = main_array.shape[1]            
+    
+#     if cost != 0:
+#         return cost
+    
+#     main_arr_copy = main_array.copy()
+#     main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = np.multiply((main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid]),arr[arr_y_start:arr_y_end, arr_x_start:arr_x_end])
+#     cost = norm_param * main_arr_copy.sum() / init_main_arr_sum
+#     # plt.imshow(main_arr_copy, interpolation='none')
+#     # plt.waitforbuttonpress()
+#     return cost
