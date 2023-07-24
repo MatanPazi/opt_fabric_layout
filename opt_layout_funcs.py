@@ -185,10 +185,11 @@ def draw_angled_rec(x0, y0, width, height, angle, img, color):
 
 # Source: Roald's response in https://stackoverflow.com/questions/11627362/how-to-straighten-a-rotated-rectangle-area-of-an-image-using-opencv-in-python/48553593#48553593
 # Made slight changes
-def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in):
+def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in, shape_in):
     if type == 'new_xy':
         center = (x_in, y_in)
-        shape = (image.shape[0], image.shape[1])  # Switching shape 1 and 0 since new_xy type assumes a 90 deg rotation.
+        # shape = (image.shape[0], image.shape[1])  # Switching shape 1 and 0 since new_xy type assumes a 90 deg rotation.
+        shape = (shape_in[1], shape_in[0])
     else:
         rect = cv2.minAreaRect(cnt)        
         shape = (image.shape[1], image.shape[0])  # cv2.warpAffine expects shape in (length, height)
@@ -241,8 +242,10 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in):
     # x_old = int(center[0])
     # y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
-    image = imutils.rotate_bound(image, angle = alpha)
-    cv2.imwrite('img_test.png',image)
+    
+    if type != 'new_xy':
+        image = imutils.rotate_bound(image, angle = alpha)
+        cv2.imwrite('img_test.png',image)
 
     alpha_rad = math.radians(alpha)
 
@@ -376,7 +379,7 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         # img_debug = img.copy()
         # cv2.drawContours(image=img_debug, contours=ptrn_cnt, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
         # cv2.imwrite('img_debug.png',img_debug) 
-        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0, 0, 0, 0)    
+        img_cropped = crop_image(ptrn_cnt, img_tmp, 'pattern', 0, 0, 0, 0, 0, 0)    
         img_gray = cv2.cvtColor(img_cropped, cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(img_gray, 150, 255, cv2.THRESH_BINARY)
         # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
@@ -461,17 +464,18 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         ptrn_imgs - the pattern image format to save the images, e.g 'pattern_{num}.png'.
         
     Returns:
-        rot_ang - A list of the rotation angle data needed for each pattern to get the first (Arbitrary) direction contour horizontal.
+        rot_ang_data - A list of the rotation angle data needed for each pattern to get the first (Arbitrary) direction contour horizontal.
     """
     img0 = cv2.imread(ptrn_image)
     cv2.imwrite('img_test.png',img0)
-    rot_ang = []
+    rot_ang_data = []
     for i in range(len(pattern_contours)):
-        img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0, 0, 0, 0)
+        img1 = crop_image(pattern_contours[i], img0, 'pattern', 0, 0, 0, 0, 0, 0)
         cv2.imwrite('img_test.png',img1)
         cnt = dir_cnt[dir_ptrn_cnt.index(i)]   #Find the first relevent direction contour
-        ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img, 0, 0, 0)
-        rot_ang.append(ang)
+        ang = crop_image(cnt, img1, 'ang_rtrn', i, pattern_img, 0, 0, 0, 0)
+        shape = img1.shape[0:2]
+        rot_ang_data.append((ang, shape))
 
         cv2.imwrite(pattern_img.format(num = i), img1)
         ptrn_img = cv2.imread(pattern_img.format(num = i))
@@ -552,7 +556,7 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
 
         img_cropped = img_cropped_temp[y_min : y_max, x_min: x_max]                   
         cv2.imwrite(pattern_img.format(num=i),img_cropped) 
-    return rot_ang
+    return rot_ang_data
     
 
 
@@ -598,9 +602,9 @@ def find_text(image, pattern_contours, dir_cnt, dir_ptrn_cnt):
         lining = 0
         main_fabric = 1
         fold = []
-        cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0, 0, 0, 0)    
+        cropped_img = crop_image(ptrn, img0, 'pattern', 0, 0, 0, 0, 0, 0)    
         for cnt in dir_cnt_np[np.where(dir_ptrn_cnt_np == ptrn_counter)]:
-            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0, 0, 0, 0)
+            dir_cropped_img = crop_image(cnt, cropped_img, 'direction', 0, 0, 0, 0, 0, 0)
             for i in range (int(360/ang_inc) - 1):                                      # Rotating 360 deg in 90 deg inc to find all text orientations.
                 img = imutils.rotate_bound(dir_cropped_img, angle = (i * ang_inc))      # rotate_bound rotation is clockwise for positive values.
                 cv2.imwrite('img_test.png',img)
@@ -684,23 +688,28 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 y = rect[0][1]
                 w = rect[1][0]
                 h = rect[1][1]
-                angle = rect[2] + rot_ang[i]
+                angle = rect[2] + rot_ang[i][0]
+                shape = rot_ang[i][1]
 
-                if rot_ang[i] > (180 - min_rot_ang):
+                if rot_ang[i][0] > (180 - min_rot_ang):
                     invert = 1
                 
-                elif rot_ang[i] > (90 - min_rot_ang):
-                    x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y)                    
+                elif rot_ang[i][0] > (90 - min_rot_ang) and rot_ang[i][0] < (90 + min_rot_ang):
+                    x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y, shape)                    
                     if rect[2] > (90 - min_rot_ang):
                         w,h = h,w
+                elif rot_ang[i][0] > (90 + min_rot_ang) and rot_ang[i][0] < (180 - min_rot_ang):
+                    x, y = crop_image(0, 0, 'new_xy', 0, 0, 90, x, y, shape)
+                    shape_temp = (shape[1], shape[0])
+                    x, y = crop_image(0, 0, 'new_xy', 0, 0, (rot_ang[i][0] - 90), x, y, shape_temp)
 
-                if (angle < min_rot_ang) or invert:
+                if (angle < min_rot_ang) or (angle > (180 - min_rot_ang)) or invert:
                     if w > h:
                         if flip_code == 0:      # Already folded along that side.
                             break
                         else:
                             flip_code = 0
-                        if y < (img.shape[0] // 2):
+                        if y < (shape[0] // 2):
                             flip_side = 'up'
                         else:
                             flip_side = 'down'
@@ -709,7 +718,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                             break
                         else:
                             flip_code = 1
-                        if x < (img.shape[1] // 2):
+                        if x < (shape[1] // 2):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
@@ -719,7 +728,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                             break
                         else:
                             flip_code = 1
-                        if x < (img.shape[1] // 2):
+                        if x < (shape[1] // 2):
                             flip_side = 'left'
                         else:
                             flip_side = 'right'
@@ -728,7 +737,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                             break
                         else:
                             flip_code = 0
-                        if y < (img.shape[0] // 2):
+                        if y < (shape[0] // 2):
                             flip_side = 'up'
                         else:
                             flip_side = 'down'

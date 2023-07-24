@@ -4,6 +4,10 @@ import cv2
 from matplotlib import pyplot as plt
 from PIL import ImageTk, Image
 
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'Butt_Warmer.pdf'
+
 # Direction_Layer = 1
 # Pattern_Layer = 2
 # pdf_name = 'PS_LuluCardi_Pattern(COPYSHOP_24x36)_BCUP.pdf'
@@ -12,9 +16,9 @@ from PIL import ImageTk, Image
 # Pattern_Layer = 3
 # pdf_name = 'LL Leo Pattern Size A0.pdf'
 
-Direction_Layer = 0
-Pattern_Layer = 1
-pdf_name = 'bt119-A0-pattern.pdf'
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'bt119-A0-pattern.pdf'
 
 # Direction_Layer = 0
 # Pattern_Layer = 1
