@@ -303,9 +303,8 @@ def find_pattern_contours(image, type):
     Returns:
         The detected pattern contours
     """
-    min_rec_size = 100
-    min_area_diff = 0.5
-    min_dist = 100
+    min_cnt_area = 400
+    min_dist = 20
     epsilon = 1
     counter = 0
     img = cv2.imread(image)
@@ -340,26 +339,22 @@ def find_pattern_contours(image, type):
                                             # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure                        
         if heir == 0:                       # If heir is 0, means it's the outer most contour, which is what I'm interested in.            
             good_contours.append(cnt)
-            maxArea = cv2.contourArea(cnt)
             aprox_main_cnt = cv2.approxPolyDP(cnt, epsilon, True)
-            rect = cv2.minAreaRect(cnt)
-            w = rect[1][0]
-            h = rect[1][1]
-        else:
+
+        elif type == 1:
             append = 0
             aprox_cnt = cv2.approxPolyDP(cnt, epsilon, True)
             newArea = cv2.contourArea(cnt)
-            rect = cv2.minAreaRect(cnt)
-            w = rect[1][0]
-            h = rect[1][1]
-            if (w > min_rec_size) and (h > min_rec_size) and (newArea/maxArea < min_area_diff):
+
+            if newArea > min_cnt_area:
                 append = 1
                 for i in range(len(aprox_main_cnt)):
                     point_x = aprox_main_cnt.item(2*i)
                     point_y = aprox_main_cnt.item(2*i+1)
-                    dist = abs(cv2.pointPolygonTest(aprox_cnt, (point_y,point_x), True))
+                    dist = abs(cv2.pointPolygonTest(aprox_cnt, (point_x,point_y), True))
                     if dist < min_dist:
                         append = 0                        
+                        break
             if append:
                 good_contours.append(cnt)
         counter += 1
@@ -823,19 +818,30 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     cntr = find_pattern_contours('image_copy.png', 1)
     cv2.drawContours(image=img, contours=cntr, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
     cv2.imwrite('image_copy.png',img)
-    cntr_np = np.asarray(cntr, dtype = object)
+    cntr_np_temp = []
+    for i in range(len(cntr)):
+        cntr_np_temp.append(cntr[i])
+    
+    # Using list comprehension. Converting 3D to 2D
+    cntr_np = [elem for twod in cntr_np_temp for elem in twod]
+    cntr_np = np.asarray(cntr_np, dtype = object)
+
     max_val = cntr_np.max(axis=1, keepdims=False)
-    min_val = cntr_np.min(axis=1, keepdims=False)
-    x_max = int(max_val[0][0][0])
-    y_max = int(max_val[0][0][1])
-    x_min = int(min_val[0][0][0])
-    y_min = int(min_val[0][0][1])
+    x_max = int(max_val[0][0])
+    y_max = int(max_val[0][1])
+
+    min_val = cntr_np.min(axis=1, keepdims=False)     
+    x_min = int(min_val[0][0])
+    y_min = int(min_val[0][1])
+
+    cntr = cntr_np.tolist()
+
     blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
     blank[:] = 255
     blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
-    for i in range((cntr[0].shape[0])):
-        cntr[0][i][0][0] -= x_min
-        cntr[0][i][0][1] -= y_min
+    for i in range(len(cntr)):
+        cntr[i][0][0] -= x_min
+        cntr[i][0][1] -= y_min
     epsilon = 10
     aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
     # Find contour center
