@@ -899,7 +899,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
                         else:   #Outisde contour
                             arr.itemset((i,j), 1.0)
                     else:
-                        if (dist >= 0): #Inside or on inner contour
+                        if (dist > 0): #Inside or on inner contour
                             arr.itemset((i,j), 1.0)               
             first_cntr = 0
     else:
@@ -973,7 +973,9 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, aprox_cntrs, ma
                                 main_array[i,j] = 1
                         else:
                             if dist < 0:    # Inside the inner contour
-                                main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
+                                temp = (max_dist - dist) / max_dist + (len-j)/len
+                                if (temp > main_array[i,j]) or (config == 1):  # Min distance 
+                                    main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
             first_cntr = 0
          
     return main_array
@@ -1027,24 +1029,25 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
     main_poly_ind = []
     main_poly_pts = []
     y,x,arr_index, inv = first_pattern_placement(main_array, num_of_ptrns, ptrn_imgs, ptrn_list)
-    arr, aprox_cnt, center_y, center_x, _ = gen_array(ptrn_imgs, arr_index, inv, 1)
+    arr, aprox_cntrs, center_y, center_x, _ = gen_array(ptrn_imgs, arr_index, inv, 1)
     center_y += y
     center_x += x
     main_poly_ind.append(arr_index)
 
-    for n in range(len(aprox_cnt)): # Changing to (y,x) from (x,y) format
-        tempx = aprox_cnt[n][0][0]
-        aprox_cnt[n][0][0] = aprox_cnt[n][0][1]
-        aprox_cnt[n][0][1] = tempx
+    for aprox_cnt in aprox_cntrs:
+        for n in range(len(aprox_cnt)): # Changing to (y,x) from (x,y) format
+            tempx = aprox_cnt[n][0][0]
+            aprox_cnt[n][0][0] = aprox_cnt[n][0][1]
+            aprox_cnt[n][0][1] = tempx
 
-    for i in range(len(aprox_cnt)):
-        aprox_cnt[i][0][0] += y
-        aprox_cnt[i][0][1] += x
+        for i in range(len(aprox_cnt)):
+            aprox_cnt[i][0][0] += y
+            aprox_cnt[i][0][1] += x
 
-    main_poly_pts.append(aprox_cnt)
+        main_poly_pts.append(aprox_cnt)
     
     # Preparing for subsequent pattern placements
-    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cnt, 0, ptrn_list)
+    main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 1, aprox_cntrs, 0, ptrn_list)
     main_array[y:y+arr.shape[0], x:x+arr.shape[1]] = np.multiply(main_array[y:y+arr.shape[0], x:x+arr.shape[1]], arr)
     ## For Debugging
     # plt.imshow(main_array, interpolation='none')
@@ -1134,21 +1137,23 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
                 center_x_min = int(center_x_temp)
         
         if (len(main_poly_ind) < num_of_copies) and (ptrn_added == 1):
-            arr_min, aprox_cnt_min, _, _, _ = gen_array(ptrn_imgs, index_min_val, invert_min, 1)
-            for n in range(len(aprox_cnt_min)): # Changing to (y,x) from (x,y) format
-                tempx = aprox_cnt_min[n][0][0]
-                aprox_cnt_min[n][0][0] = aprox_cnt_min[n][0][1]
-                aprox_cnt_min[n][0][1] = tempx 
-            
-            # Need to handle offset and rotation(?)
-            for m in range(len(aprox_cnt_min)):
-                aprox_cnt_min[m][0][0] += y_min
-                aprox_cnt_min[m][0][1] += x_min
-                
+            arr_min, aprox_cntrs_min, _, _, _ = gen_array(ptrn_imgs, index_min_val, invert_min, 1)
             main_poly_ind.append(index_min_val)
-            main_poly_pts.append(aprox_cnt_min)
+            for aprox_cnt_min in aprox_cntrs_min:
+                for n in range(len(aprox_cnt_min)): # Changing to (y,x) from (x,y) format
+                    tempx = aprox_cnt_min[n][0][0]
+                    aprox_cnt_min[n][0][0] = aprox_cnt_min[n][0][1]
+                    aprox_cnt_min[n][0][1] = tempx 
+                
+                # Need to handle offset and rotation(?)
+                for m in range(len(aprox_cnt_min)):
+                    aprox_cnt_min[m][0][0] += y_min
+                    aprox_cnt_min[m][0][1] += x_min
+                
+                main_poly_pts.append(aprox_cnt_min)
 
-            main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 2, aprox_cnt_min, main_array_init, ptrn_list)
+
+            main_array = init_main_arr(fabric_width, num_of_ptrns, ptrn_imgs, 2, aprox_cntrs_min, main_array_init, ptrn_list)
             main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]] = np.multiply(main_array[y_min:y_min+arr_min.shape[0], x_min:x_min+arr_min.shape[1]], arr_min)
             ## For Debugging
             # plt.imshow(main_array, interpolation='none')
