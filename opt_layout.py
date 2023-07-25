@@ -115,7 +115,7 @@ rot_angles_data = save_patterns(img_out.format(num=Pattern_Layer), pattern_conto
 fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles_data)
 
 # Optimization section
-fabric_width = int(1.0 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
+fabric_width = int(1.05 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
 
 # Parameters for GUI
 num_of_ptrns = len(copies)

@@ -893,7 +893,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
                     dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
                     if first_cntr:
                         if (dist > 0): #Inside contour
-                            arr.itemset((i,j), (-dist / max_dist))
+                            arr.itemset((i,j), ((-dist / max_dist) - 50))
                         elif (dist == 0): #on contour
                             arr.itemset((i,j), 1.0)
                         else:   #Outisde contour
