@@ -824,26 +824,40 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     
     # Using list comprehension. Converting 3D to 2D
     cntr_np = [elem for twod in cntr_np_temp for elem in twod]
-    cntr_np = np.asarray(cntr_np, dtype = object)
+    cntr_np = np.asarray(cntr_np, dtype = np.int32)
 
-    max_val = cntr_np.max(axis=1, keepdims=False)
+    max_val = cntr_np.max(axis=0, keepdims=False)
     x_max = int(max_val[0][0])
     y_max = int(max_val[0][1])
 
-    min_val = cntr_np.min(axis=1, keepdims=False)     
+    min_val = cntr_np.min(axis=0, keepdims=False)     
     x_min = int(min_val[0][0])
     y_min = int(min_val[0][1])
-
-    cntr = cntr_np.tolist()
 
     blank = np.zeros(((y_max - y_min+1),(x_max-x_min+1), 3), dtype=np.uint8)        
     blank[:] = 255
     blank[0:y_max-y_min + 1, 0:x_max-x_min + 1] = img[y_min:y_max+1, x_min:x_max+1]
+
     for i in range(len(cntr)):
-        cntr[i][0][0] -= x_min
-        cntr[i][0][1] -= y_min
-    epsilon = 10
-    aprox_cnt = cv2.approxPolyDP(cntr[0], epsilon, True)
+        for j in range(cntr[i].shape[0]):
+            cntr[i][j][0][0] -= x_min
+            cntr[i][j][0][1] -= y_min
+    epsilon = 1
+
+    aprox_cntrs = []
+    for i in range(len(cntr)):
+        aprox_cnt_temp = cv2.approxPolyDP(cntr[i], epsilon, True)
+        aprox_cntrs.append(aprox_cnt_temp)
+
+    # # Merging multiple contours, source: https://stackoverflow.com/a/65434912
+    # # Get a list of points of each contour:
+    # list_of_pts = [] 
+    # for ctr in aprox_cntrs:
+    #     list_of_pts += [pt[0] for pt in ctr]    
+    # # force the list of points into cv2 format
+    # aprox_cnt = np.array(list_of_pts).reshape((-1,1,2)).astype(np.int32)
+
+
     # Find contour center
     M = cv2.moments(cntr[0])
     cy = int(M['m01']/M['m00'])
@@ -858,41 +872,64 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     shape = (blank.shape[1],blank.shape[0])
     arr = np.zeros(shape)
     max_dist = 0
+    first_cntr = 1
 
     #Determine whether each pixel is in or outside the contour and give the relevant value.
     if config == 0:
-        for i in range (arr.shape[0]):
-            for j in range (arr.shape[1]):        
-                dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
-                if (dist >= 0): #Inside or on contour
-                    arr.itemset((i,j), 0.0)
-                else:
-                    arr.itemset((i,j), 1.0)
+        for aprox_cnt in aprox_cntrs:
+            for i in range (arr.shape[0]):
+                for j in range (arr.shape[1]):                        
+                    dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+                    if first_cntr:                        
+                        if (dist >= 0): #Inside or on contour
+                            arr.itemset((i,j), 0.0)
+                        else:
+                            arr.itemset((i,j), 1.0)
+                    else:
+                        if (dist >= 0): #Inside or on inner contour
+                            arr.itemset((i,j), 1.0)
+            first_cntr = 0
     elif config == 1:
-        for i in range (arr.shape[0]):
-            for j in range (arr.shape[1]): 
-                dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
-                if max_dist < dist:
-                    max_dist = dist
-        
-        for i in range (arr.shape[0]):
-            for j in range (arr.shape[1]): 
-                dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
-                if (dist > 0): #Inside contour
-                    arr.itemset((i,j), (-dist / max_dist))
-                elif (dist == 0): #on contour
-                    arr.itemset((i,j), 1.0)
-                else:   #Outisde contour
-                    arr.itemset((i,j), 1.0)
+        for aprox_cnt in aprox_cntrs:
+            for i in range (arr.shape[0]):
+                for j in range (arr.shape[1]): 
+                    dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+                    if max_dist < dist:
+                        max_dist = dist
+        for aprox_cnt in aprox_cntrs:
+            for i in range (arr.shape[0]):
+                for j in range (arr.shape[1]): 
+                    dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+                    if first_cntr:
+                        if (dist > 0): #Inside contour
+                            arr.itemset((i,j), (-dist / max_dist))
+                        elif (dist == 0): #on contour
+                            arr.itemset((i,j), 1.0)
+                        else:   #Outisde contour
+                            arr.itemset((i,j), 1.0)
+                    else:
+                        if (dist >= 0): #Inside or on inner contour
+                            arr.itemset((i,j), 1.0)               
+            first_cntr = 0
     else:
-        for i in range (arr.shape[0]):
-            for j in range (arr.shape[1]):        
-                dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
-                if (dist >= 0): #Inside or on contour
-                    arr.itemset((i,j), 1)
-                else:
-                    arr.itemset((i,j), 0)
+        for aprox_cnt in aprox_cntrs:
+            for i in range (arr.shape[0]):
+                for j in range (arr.shape[1]):        
+                    dist = cv2.pointPolygonTest(aprox_cnt, (i,j), True)
+                    if first_cntr:
+                        if (dist >= 0): #Inside or on contour
+                            arr.itemset((i,j), 1.0)
+                        else:
+                            arr.itemset((i,j), 0.0)
+                    else:
+                        if (dist >= 0): #Inside or on inner contour
+                            arr.itemset((i,j), 0.0)                        
+            first_cntr = 0
     
+    ## For Debugging
+    # plt.imshow(arr, interpolation='none')
+    # plt.waitforbuttonpress()
+
     if config == 0:
         return arr.T
     else:
