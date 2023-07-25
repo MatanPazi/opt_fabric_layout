@@ -304,8 +304,8 @@ def find_pattern_contours(image, type):
         The detected pattern contours
     """
     min_cnt_area = 400
-    min_dist = 20
-    epsilon = 1
+    min_dist = 40
+    epsilon = 10
     counter = 0
     img = cv2.imread(image)
         
