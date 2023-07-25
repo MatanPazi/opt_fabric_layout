@@ -303,8 +303,8 @@ def find_pattern_contours(image, type):
     Returns:
         The detected pattern contours
     """
-    min_cnt_area = 400
-    min_dist = 40
+    min_cnt_area = 1000
+    min_dist = 50
     epsilon = 10
     counter = 0
     img = cv2.imread(image)
@@ -320,26 +320,64 @@ def find_pattern_contours(image, type):
     # convolved and third parameter is the number
     # of iterations, which will determine how much
     # you want to erode/dilate a given image.
+    
+    ## For video
+    cv2.imwrite('img_test.png', img)
+    temp_img = cv2.imread('img_test.png')
+    cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+    cv2.imshow('window',temp_img)
+    cv2.waitKey(4000)
+    ##
+
     img = cv2.erode(img, kernel, iterations=7)
+
+    ## For video
     cv2.imwrite('img_test.png', img)
+    temp_img = cv2.imread('img_test.png')
+    cv2.imshow('window',temp_img)
+    cv2.waitKey(2000)
+    ##
+
     img = cv2.dilate(img, kernel, iterations=2)
+    
+    ## For video
     cv2.imwrite('img_test.png', img)
+    temp_img = cv2.imread('img_test.png')
+    cv2.imshow('window',temp_img)
+    cv2.waitKey(2000)
+    ##
+
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
     # detect the contours on the binary image using cv2.CHAIN_APPROX_NONE
     contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)                                             
     good_contours = []
+    image_copy = img.copy()
+    ## For video
+    # cv2.imwrite('image_copy.png',image_copy) 
+    # temp_img = cv2.imread('image_copy.png')
+    # cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+    # cv2.imshow('window',temp_img)
+    # cv2.waitKey(2000)
+    ##
     j = 0
     for cnt in contours:
-        if counter == 0:                    # First contour encompasses entire image
+        if counter == 0:    # First contour encompasses entire image, so skip.
             counter += 1
             continue
         
-        heir = hierarchy[0][counter][3]     # [next, previous, first child, parent]. 
-                                            # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure                        
-        if heir == 0:                       # If heir is 0, means it's the outer most contour, which is what I'm interested in.            
+        heir = hierarchy[0][counter][3]                         # [next, previous, first child, parent]. 
+                                                                # See source: https://stackoverflow.com/questions/11782147/python-opencv-contour-tree-hierarchy-structure                        
+        if heir == 0 and cv2.contourArea(cnt) > min_cnt_area:   # If heir is 0, means it's the outer most contour, which is what I'm interested in.            
             good_contours.append(cnt)
             aprox_main_cnt = cv2.approxPolyDP(cnt, epsilon, True)
+            # ## For video
+            # cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
+            # cv2.imwrite('image_copy.png',image_copy) 
+            # temp_img = cv2.imread('image_copy.png')
+            # cv2.imshow('window',temp_img)
+            # cv2.waitKey(30)
+            ##
 
         elif type == 1:
             append = 0
@@ -357,9 +395,15 @@ def find_pattern_contours(image, type):
                         break
             if append:
                 good_contours.append(cnt)
+                ## For video
+                # cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
+                # cv2.imwrite('image_copy.png',image_copy) 
+                # temp_img = cv2.imread('image_copy.png')
+                # cv2.imshow('window',temp_img)
+                # cv2.waitKey(30)
+                ##
         counter += 1
     ## For debugging
-    image_copy = img.copy()
     cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
     if type == 0:                
         cv2.imwrite('patterns_overview.png',image_copy) 
@@ -842,7 +886,7 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
         for j in range(cntr[i].shape[0]):
             cntr[i][j][0][0] -= x_min
             cntr[i][j][0][1] -= y_min
-    epsilon = 1
+    epsilon = 10
 
     aprox_cntrs = []
     for i in range(len(cntr)):
