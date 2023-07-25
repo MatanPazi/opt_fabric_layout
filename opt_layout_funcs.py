@@ -849,15 +849,6 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
         aprox_cnt_temp = cv2.approxPolyDP(cntr[i], epsilon, True)
         aprox_cntrs.append(aprox_cnt_temp)
 
-    # # Merging multiple contours, source: https://stackoverflow.com/a/65434912
-    # # Get a list of points of each contour:
-    # list_of_pts = [] 
-    # for ctr in aprox_cntrs:
-    #     list_of_pts += [pt[0] for pt in ctr]    
-    # # force the list of points into cv2 format
-    # aprox_cnt = np.array(list_of_pts).reshape((-1,1,2)).astype(np.int32)
-
-
     # Find contour center
     M = cv2.moments(cntr[0])
     cy = int(M['m01']/M['m00'])
@@ -933,9 +924,9 @@ def gen_array(ptrn_imgs, ptrn_num, inv, config):
     if config == 0:
         return arr.T
     else:
-        return arr.T, aprox_cnt, cy, cx, max_dist
+        return arr.T, aprox_cntrs, cy, cx, max_dist
 
-def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_array, ptrn_list):
+def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, aprox_cntrs, main_array, ptrn_list):
     """
     Returns an initialized main fabric array. \n
     leftmost column values are 1, rightmost column values are 2 \n
@@ -950,6 +941,7 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
     Returns:
         2D array, int, origin (0,0) top left corner, positive Y axis is downwards, positive X axis is to the right.
     """    
+
     len = 0
     for i in range(num_of_ptrns):
         if i not in ptrn_list:
@@ -966,16 +958,23 @@ def init_main_arr(Fabric_width, num_of_ptrns, ptrn_imgs, config, cntr, main_arra
         max_dist = math.sqrt(Fabric_width**2 + len**2)
         if config == 1:    #First placement
             main_array = max_dist * np.ones(shape)
-        for i in range(Fabric_width):
-            for j in range(len):
-                if main_array[i,j] > 0: #Not inside another contour
-                    dist = -1 * cv2.pointPolygonTest(cntr, (i,j), True) #Positive values for outisde the contour              
-                    if dist > 0:    # Outside the current contour
-                        temp = (max_dist - dist) / max_dist + (len-j)/len
-                        if (temp > main_array[i,j]) or (config == 1):  # Min distance 
-                            main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
-                    else:
-                        main_array[i,j] = 1
+        first_cntr = 1
+        for aprox_cnt in aprox_cntrs:
+            for i in range(Fabric_width):
+                for j in range(len):
+                    if main_array[i,j] > 0: #Not inside another contour
+                        dist = -1 * cv2.pointPolygonTest(aprox_cnt, (i,j), True) #Positive values for outisde the contour              
+                        if first_cntr:                            
+                            if dist > 0:    # Outside the current contour
+                                temp = (max_dist - dist) / max_dist + (len-j)/len
+                                if (temp > main_array[i,j]) or (config == 1):  # Min distance 
+                                    main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
+                            else:
+                                main_array[i,j] = 1
+                        else:
+                            if dist < 0:    # Inside the inner contour
+                                main_array[i,j] = (max_dist - dist) / max_dist + (len-j)/len
+            first_cntr = 0
          
     return main_array
 
@@ -1070,7 +1069,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
             ptrn_added = 1
             cost_min = 1
             for invert in range(2):
-                arr, aprox_cnt, center_x, center_y, _ = gen_array(ptrn_imgs, i, invert, 2)            
+                arr, _, center_x, center_y, _ = gen_array(ptrn_imgs, i, invert, 2)            
                 for p in range(len(main_poly_pts)):
                     for j in range(len(main_poly_pts[p])):
                         # main_array_copy = main_array.copy()
