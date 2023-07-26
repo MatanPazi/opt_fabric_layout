@@ -44,7 +44,7 @@ max_width = 120
 min_len = 120
 first = 1
 image_copy = img.copy()
-cv2.imwrite('image_copy.png',image_copy) 
+cv2.imwrite('minAreaRect_Test_Result.png',image_copy) 
 # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
 # Used to add text on pattern
 counter = 0
@@ -65,5 +65,5 @@ for cnt in contours:
         image_tmp = cv2.putText(img=image_copy, text=str(theta)+'[deg]', org=(x, y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(0,0,0), thickness=5)
         image_tmp = cv2.putText(img=image_copy, text='w='+str(w), org=(x, y+100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(0,0,0), thickness=5)
         image_tmp = cv2.putText(img=image_copy, text='h='+str(h), org=(x, y+200), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(0,0,0), thickness=5)
-        cv2.imwrite('image_copy.png',image_copy)
+        cv2.imwrite('minAreaRect_Test_Result.png',image_copy)
     counter += 1
