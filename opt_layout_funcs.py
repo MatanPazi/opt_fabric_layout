@@ -244,10 +244,9 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in, shape_
     # x_old = int(center[0])
     # y_old = int(center[1])
     distance = math.sqrt(x_old**2+y_old**2)
-    
-    if type != 'new_xy':
-        image = imutils.rotate_bound(image, angle = alpha)
-        cv2.imwrite('img_test.png',image)
+        
+    image = imutils.rotate_bound(image, angle = alpha)
+    cv2.imwrite('img_test.png',image)
 
     alpha_rad = math.radians(alpha)
 
@@ -274,7 +273,7 @@ def crop_image(cnt, image, type, ptrn_num, ptrn_imgs, ang_in, x_in, y_in, shape_
             new_width = width // 2
             new_height = math.floor(2 * height)         # To make sure the text is encompassed
     elif type == 'new_xy':
-        return x_new, y_new
+        return x_new, y_new, image.shape
 
     if (y_new - new_height) < 0:
         y_new = new_height
@@ -756,68 +755,54 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 y = rect[0][1]
                 w = rect[1][0]
                 h = rect[1][1]
-                angle = rect[2] + rot_ang[i][0]
+                # Setting angle to an absolute angle in polar coordinates
+                if w > h:
+                    angle = abs(180 - rect[2] - rot_ang[i][0])
+                else:
+                    angle = abs(90 - rect[2] - rot_ang[i][0])
+
                 shape = rot_ang[i][1]
+                arr = np.zeros(shape)
 
-                if rot_ang[i][0] > (180 - min_rot_ang):
-                    invert = 1
-                
-                elif rot_ang[i][0] > (90 - min_rot_ang) and rot_ang[i][0] < (90 + min_rot_ang):
-                    x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y, shape)                    
-                    if rect[2] < (90 - min_rot_ang):
-                        w,h = h,w
-                elif rot_ang[i][0] > (90 + min_rot_ang) and rot_ang[i][0] < (180 - min_rot_ang):
-                    x, y = crop_image(0, 0, 'new_xy', 0, 0, 90, x, y, shape)
-                    shape_temp = (shape[1], shape[0])
-                    x, y = crop_image(0, 0, 'new_xy', 0, 0, (rot_ang[i][0] - 90), x, y, shape_temp)
+                if rot_ang[i][0] < (90 + min_rot_ang):                    
+                    if rot_ang[i][0] > 90:                                                
+                        x, y, shape = crop_image(0, arr, 'new_xy', 0, 0, 90, x, y, shape)
+                    else:
+                        x, y, shape = crop_image(0, arr, 'new_xy', 0, 0, rot_ang[i][0], x, y, shape)
 
-                if (angle < min_rot_ang) or (angle > (180 - min_rot_ang)) or invert:
-                    if w > h:
-                        if flip_code == 0:      # Already folded along that side.
-                            break
-                        else:
-                            flip_code = 0
-                        if y < (shape[0] // 2):
-                            flip_side = 'up'
-                        else:
-                            flip_side = 'down'
+                else:                    
+                    x, y, shape = crop_image(0, arr, 'new_xy', 0, 0, 90, x, y, shape)
+                    arr = np.zeros(shape)
+                    x, y, shape = crop_image(0, arr, 'new_xy', 0, 0, (rot_ang[i][0] - 90), x, y, shape)
+
+                if (angle < min_rot_ang) or (angle > (180 - min_rot_ang)):
+                    if flip_code == 0:      # Already folded along that side.
+                        break
                     else:
-                        if flip_code == 1:
-                            break
-                        else:
-                            flip_code = 1
-                        if x < (shape[1] // 2):
-                            flip_side = 'left'
-                        else:
-                            flip_side = 'right'
-                else: #angle > (90 - min_rot_ang)
-                    if w > h:
-                        if flip_code == 1:
-                            break
-                        else:
-                            flip_code = 1
-                        if x < (shape[1] // 2):
-                            flip_side = 'left'
-                        else:
-                            flip_side = 'right'
+                        flip_code = 0
+                    if y < (shape[0] // 2):
+                        flip_side = 'up'
                     else:
-                        if flip_code == 0:
-                            break
-                        else:
-                            flip_code = 0
-                        if y < (shape[0] // 2):
-                            flip_side = 'up'
-                        else:
-                            flip_side = 'down'
+                        flip_side = 'down'
+
+                else: # angle is approx 90 degrees
+                    if flip_code == 1:
+                        break
+                    else:
+                        flip_code = 1
+                    if x < (shape[1] // 2):
+                        flip_side = 'left'
+                    else:
+                        flip_side = 'right'                    
                     
                 img_flipped = cv2.flip(img, flip_code)
                 if flip_code == 0:
-                    if ((flip_side == 'up') and (invert == 0)) or ((flip_side == 'down') and (invert == 1)):
+                    if flip_side == 'up':
                         stitched_img = cv2.vconcat([img_flipped, img])
                     else:
                         stitched_img = cv2.vconcat([img, img_flipped])
                 else:
-                    if ((flip_side == 'left') and (invert == 0)) or ((flip_side == 'right') and (invert == 1)):
+                    if (flip_side == 'left'):
                         stitched_img = cv2.hconcat([img_flipped, img])
                     else:
                         stitched_img = cv2.hconcat([img, img_flipped])
