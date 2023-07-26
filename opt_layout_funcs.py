@@ -22,6 +22,8 @@ A0_Width  = 841
 A0_Height = 1189    
 min_rot_ang = 10
 
+# Parameters for plots
+video = 0
 
 
 
@@ -322,30 +324,30 @@ def find_pattern_contours(image, type):
     # you want to erode/dilate a given image.
     
     ## For video
-    cv2.imwrite('img_test.png', img)
-    temp_img = cv2.imread('img_test.png')
-    cv2.namedWindow('window', cv2.WINDOW_NORMAL)
-    cv2.imshow('window',temp_img)
-    cv2.waitKey(4000)
-    ##
+    if video:
+        cv2.imwrite('img_test.png', img)
+        temp_img = cv2.imread('img_test.png')
+        cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+        cv2.imshow('window',temp_img)
+        cv2.waitKey(4000)        
 
     img = cv2.erode(img, kernel, iterations=7)
 
     ## For video
-    cv2.imwrite('img_test.png', img)
-    temp_img = cv2.imread('img_test.png')
-    cv2.imshow('window',temp_img)
-    cv2.waitKey(2000)
-    ##
+    if video:
+        cv2.imwrite('img_test.png', img)
+        temp_img = cv2.imread('img_test.png')
+        cv2.imshow('window',temp_img)
+        cv2.waitKey(2000)
 
     img = cv2.dilate(img, kernel, iterations=2)
     
     ## For video
-    cv2.imwrite('img_test.png', img)
-    temp_img = cv2.imread('img_test.png')
-    cv2.imshow('window',temp_img)
-    cv2.waitKey(2000)
-    ##
+    if video:
+        cv2.imwrite('img_test.png', img)
+        temp_img = cv2.imread('img_test.png')
+        cv2.imshow('window',temp_img)
+        cv2.waitKey(2000)
 
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(img_gray, 240, 255, cv2.THRESH_BINARY)
@@ -354,12 +356,12 @@ def find_pattern_contours(image, type):
     good_contours = []
     image_copy = img.copy()
     ## For video
-    # cv2.imwrite('image_copy.png',image_copy) 
-    # temp_img = cv2.imread('image_copy.png')
-    # cv2.namedWindow('window', cv2.WINDOW_NORMAL)
-    # cv2.imshow('window',temp_img)
-    # cv2.waitKey(2000)
-    ##
+    if video:
+        cv2.imwrite('image_copy.png',image_copy) 
+        temp_img = cv2.imread('image_copy.png')
+        cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+        cv2.imshow('window',temp_img)
+        cv2.waitKey(2000)
     j = 0
     for cnt in contours:
         if counter == 0:    # First contour encompasses entire image, so skip.
@@ -372,12 +374,12 @@ def find_pattern_contours(image, type):
             good_contours.append(cnt)
             aprox_main_cnt = cv2.approxPolyDP(cnt, epsilon, True)
             # ## For video
-            # cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
-            # cv2.imwrite('image_copy.png',image_copy) 
-            # temp_img = cv2.imread('image_copy.png')
-            # cv2.imshow('window',temp_img)
-            # cv2.waitKey(30)
-            ##
+            if video:
+                cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
+                cv2.imwrite('image_copy.png',image_copy) 
+                temp_img = cv2.imread('image_copy.png')
+                cv2.imshow('window',temp_img)
+                cv2.waitKey(30)
 
         elif type == 1:
             append = 0
@@ -396,12 +398,13 @@ def find_pattern_contours(image, type):
             if append:
                 good_contours.append(cnt)
                 ## For video
-                # cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
-                # cv2.imwrite('image_copy.png',image_copy) 
-                # temp_img = cv2.imread('image_copy.png')
-                # cv2.imshow('window',temp_img)
-                # cv2.waitKey(30)
-                ##
+                if video:
+                    cv2.drawContours(image=image_copy, contours=cnt, contourIdx=-1, color=(0, 255, 0), thickness=30, lineType=cv2.LINE_AA)
+                    cv2.imwrite('image_copy.png',image_copy) 
+                    temp_img = cv2.imread('image_copy.png')
+                    cv2.imshow('window',temp_img)
+                    cv2.waitKey(30)
+
         counter += 1
     ## For debugging
     cv2.drawContours(image=image_copy, contours=good_contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
@@ -587,7 +590,6 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
             cnt_np = np.asarray(cnt, dtype = object)
             max_val = cnt_np.max(axis=0, keepdims=False)
             min_val = cnt_np.min(axis=0, keepdims=False)
-            debug = max_val[0][0]
             for j in range(len(cnt)):
                 if max_val[0][0] > x_max:
                     x_max = int(max_val[0][0])
@@ -762,7 +764,7 @@ def fold_patterns(fold_list, pattern_img, size, page_count, rot_ang):
                 
                 elif rot_ang[i][0] > (90 - min_rot_ang) and rot_ang[i][0] < (90 + min_rot_ang):
                     x, y = crop_image(0, ptrn_img, 'new_xy', 0, 0, 90, x, y, shape)                    
-                    if rect[2] > (90 - min_rot_ang):
+                    if rect[2] < (90 - min_rot_ang):
                         w,h = h,w
                 elif rot_ang[i][0] > (90 + min_rot_ang) and rot_ang[i][0] < (180 - min_rot_ang):
                     x, y = crop_image(0, 0, 'new_xy', 0, 0, 90, x, y, shape)
@@ -1135,7 +1137,7 @@ def opt_place(copies, ptrn_imgs, fabric_width, ptrn_list):
                         init_pos = [y,x]
                         ## Maniuplate x and y simultaneously:                
                         debug = 0
-                        # if i == 1:
+                        # if i == 4:
                         #     debug = 1
                         res = optimize.minimize(cost_func_NFP, init_pos, args=(main_array, arr, debug), method='Nelder-Mead', options=opts)
                         y = res.x[0]
