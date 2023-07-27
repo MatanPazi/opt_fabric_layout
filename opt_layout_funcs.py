@@ -459,6 +459,11 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         first = 1
         image_copy = img_cropped.copy()
         cv2.imwrite('image_copy.png',image_copy) 
+        if video:
+            temp_img = cv2.imread('image_copy.png')
+            cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+            cv2.imshow('window',temp_img)
+            cv2.waitKey(4000)
         # cv2.drawContours(image=image_copy, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv2.LINE_AA)
         # Used to add text on pattern
         rect_ptrn = cv2.minAreaRect(ptrn_cnt)
@@ -476,8 +481,6 @@ def find_potential_direction_contours(image, ptrn_cntrs):
             w = rect[1][0]
             h = rect[1][1]
             theta = rect[2]   
-            draw_angled_rec(x, y, w, h, theta, image_copy, 'green')
-            cv2.imwrite('image_copy.png',image_copy)  
             if w == 0 or h == 0:
                 continue
             if w/h > slender_rat or h/w > slender_rat:
@@ -486,8 +489,14 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         continue
                     else:                    
                         dir_ptrn_flag = 1
-                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
-                        cv2.imwrite('image_copy.png',image_copy)  
+                          
+                        if video:
+                            draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
+                            cv2.imwrite('image_copy.png',image_copy)
+                            temp_img = cv2.imread('image_copy.png')
+                            cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+                            cv2.imshow('window',temp_img)
+                            cv2.waitKey(1000)
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
@@ -500,8 +509,13 @@ def find_potential_direction_contours(image, ptrn_cntrs):
                         continue
                     else:
                         dir_ptrn_flag = 1
-                        img_cropped = draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
-                        cv2.imwrite('image_copy.png',image_copy) 
+                        if video:
+                            draw_angled_rec(x, y, w, h, theta, image_copy, 'red')
+                            cv2.imwrite('image_copy.png',image_copy)
+                            temp_img = cv2.imread('image_copy.png')
+                            cv2.namedWindow('window', cv2.WINDOW_NORMAL)
+                            cv2.imshow('window',temp_img)
+                            cv2.waitKey(1000) 
                         # Adding text on pattern image
                         img_ptrn = cv2.imread('patterns_overview.png')
                         image_tmp = img_ptrn.copy()
