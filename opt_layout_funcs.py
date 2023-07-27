@@ -1233,12 +1233,12 @@ def cost_func_NFP(pos, main_array, arr, debug):
         cost += (x_pos + arr.shape[1] - main_array.shape[1])/10
     
     if cost != 0:
-        if debug:
-            plt.title(cost)
-            plt.text(500,500,x_pos, fontsize=12)
-            plt.text(600,600,y_pos, fontsize=12)
-            plt.imshow(main_array, interpolation='none')
-            plt.waitforbuttonpress()
+        # if debug:
+            # plt.title(cost)
+            # plt.text(500,500,x_pos, fontsize=12)
+            # plt.text(600,600,y_pos, fontsize=12)
+            # plt.imshow(main_array, interpolation='none')
+            # plt.waitforbuttonpress()
         return cost
 
 
@@ -1253,10 +1253,10 @@ def cost_func_NFP(pos, main_array, arr, debug):
         cost = -init_sum/1000
     
     if debug:
-        main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr
+        main_arr_copy[y_pos:main_arr_len, x_pos:main_arr_wid] = arr*50
         plt.title(cost)
         # plt.text(x_pos,y_pos,x_pos, fontsize=12)
-        plt.text(x_pos,y_pos,y_pos, fontsize=12)
+        # plt.text(x_pos,y_pos,y_pos, fontsize=12)
         plt.imshow(main_arr_copy, interpolation='none')
         plt.waitforbuttonpress()
 
