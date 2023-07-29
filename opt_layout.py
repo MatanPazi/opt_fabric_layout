@@ -30,9 +30,6 @@ pdf_name = 'Butt_Warmer.pdf'
 
 
 
-
-
-
 def get_vals():    
     for i in range(num_of_ptrns):
         if cbVariables[i].get() == 1:
@@ -105,7 +102,7 @@ rot_angles_data = save_patterns(img_out.format(num=Pattern_Layer), pattern_conto
 fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles_data)
 
 # Optimization section
-fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
+fabric_width = int(1.1 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
 
 # Parameters for GUI
 num_of_ptrns = len(copies)
