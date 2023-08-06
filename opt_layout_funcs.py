@@ -575,8 +575,12 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         img_temp = ptrn_img.copy()
         cv2.imwrite('img_temp.png',img_temp)
         ptrn_cntr = find_pattern_contours('img_temp.png', 2)
+        ptrn_cnt_area = []
+        for j in range (len(ptrn_cntr)):            
+            ptrn_cnt_area.append(cv2.contourArea(ptrn_cntr[j]))   #Find the contour with the largest area, to prevent lines from adjacent patterns from interrupting.
+        ptrn_index = ptrn_cnt_area.index(max(ptrn_cnt_area))
         # computing the bounding rectangle of the contour
-        x, y, w, h = cv2.boundingRect(ptrn_cntr[0])
+        x, y, w, h = cv2.boundingRect(ptrn_cntr[ptrn_index])
         # ptrn_img = cv2.rectangle(ptrn_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         cv2.imwrite('img_test.png',ptrn_img)
         img_cropped_temp = ptrn_img[y : y+h, x: x+w]
