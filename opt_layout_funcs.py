@@ -454,11 +454,13 @@ def find_potential_direction_contours(image, ptrn_cntrs):
         contours, hierarchy = cv2.findContours(image=thresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)            
         slender_rat = 3
         min_width = 10
-        max_width = 120
+        max_width = 150
         min_len = 120
         first = 1
         image_copy = img_cropped.copy()
+        img_test = img_cropped.copy()
         cv2.imwrite('image_copy.png',image_copy) 
+        cv2.imwrite('img_test.png',img_test) 
         if video:
             temp_img = cv2.imread('image_copy.png')
             cv2.namedWindow('window', cv2.WINDOW_NORMAL)
@@ -481,6 +483,8 @@ def find_potential_direction_contours(image, ptrn_cntrs):
             w = rect[1][0]
             h = rect[1][1]
             theta = rect[2]   
+            draw_angled_rec(x, y, w, h, theta, img_test, 'red')
+            cv2.imwrite('img_test.png',img_test)
             if w == 0 or h == 0:
                 continue
             if w/h > slender_rat or h/w > slender_rat:
