@@ -4,9 +4,9 @@ import cv2
 from matplotlib import pyplot as plt
 from PIL import ImageTk, Image
 
-Direction_Layer = 0
-Pattern_Layer = 1
-pdf_name = 'Butt_Warmer.pdf'
+# Direction_Layer = 0
+# Pattern_Layer = 1
+# pdf_name = 'Butt_Warmer.pdf'
 
 # Direction_Layer = 1
 # Pattern_Layer = 2
@@ -27,6 +27,10 @@ pdf_name = 'Butt_Warmer.pdf'
 # Direction_Layer = 1
 # Pattern_Layer = 3
 # pdf_name = 'PS_ByrdieButtonup_UniversalPatternPieces(A0).pdf'
+
+Direction_Layer = 0
+Pattern_Layer = 1
+pdf_name = 'Daisy Copy Shop.pdf'
 
 
 
@@ -102,7 +106,7 @@ rot_angles_data = save_patterns(img_out.format(num=Pattern_Layer), pattern_conto
 fold_patterns(fold, ptrn_imgs, size, page_count, rot_angles_data)
 
 # Optimization section
-fabric_width = int(1.1 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
+fabric_width = int(1.5 * 1000)   #1.5[m] to pixels, each pixel is 1[mm^2]
 
 # Parameters for GUI
 num_of_ptrns = len(copies)
