@@ -576,9 +576,19 @@ def save_patterns(ptrn_image, pattern_contours, dir_cnt, dir_ptrn_cnt, pattern_i
         cv2.imwrite('img_temp.png',img_temp)
         ptrn_cntr = find_pattern_contours('img_temp.png', 2)
         ptrn_cnt_area = []
-        for j in range (len(ptrn_cntr)):            
+        for j in range (len(ptrn_cntr)):
             ptrn_cnt_area.append(cv2.contourArea(ptrn_cntr[j]))   #Find the contour with the largest area, to prevent lines from adjacent patterns from interrupting.
         ptrn_index = ptrn_cnt_area.index(max(ptrn_cnt_area))
+        ptrn_img = cv2.imread(pattern_img.format(num = i))
+        for j in range (len(ptrn_cntr)):
+            if j == ptrn_index:
+                continue            
+            rect = cv2.minAreaRect(ptrn_cntr[j])
+            x = rect[0][0]
+            y = rect[0][1]                
+            if cv2.pointPolygonTest(ptrn_cntr[ptrn_index], (x,y), True) < 0:        # If the pattern is outside the main pattern contour:                
+                cv2.fillPoly(ptrn_img, pts = [ptrn_cntr[j]], color =(255,255,255))  # Removing lines from adjacent patterns
+        cv2.imwrite(pattern_img.format(num = i), ptrn_img)
         # computing the bounding rectangle of the contour
         x, y, w, h = cv2.boundingRect(ptrn_cntr[ptrn_index])
         # ptrn_img = cv2.rectangle(ptrn_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
